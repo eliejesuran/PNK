@@ -372,7 +372,6 @@ export interface EventFormValues {
   std_price: string;
   std_quota: string;
   std_note: string;
-  nip_price: string;
   nip_quota: string;
   nip_note: string;
 }
@@ -396,7 +395,6 @@ export function eventToForm(e: EventRow, tz: string): EventFormValues {
     std_price: '',
     std_quota: '',
     std_note: '',
-    nip_price: '',
     nip_quota: '',
     nip_note: '',
   };
@@ -420,7 +418,6 @@ export const emptyEventForm = (venueId?: number): EventFormValues => ({
   std_price: '15',
   std_quota: '100',
   std_note: '',
-  nip_price: '30',
   nip_quota: '10',
   nip_note: 'Not Very Important Person',
 });
@@ -498,13 +495,10 @@ const EventFields: FC<{ v: EventFormValues; venues: Venue[]; isNew: boolean; def
           <Field id="std_note" label="Standard — petit texte (facultatif)">
             <input id="std_note" name="std_note" type="text" maxlength={80} value={v.std_note} />
           </Field>
-          <Field id="nip_quota" label="NIP — nombre de places">
+          <Field id="nip_quota" label="NIP — invitations gratuites (nombre)" hint="Jamais en vente en ligne : tu les génères toi-même depuis « Caisse / invités »">
             <input id="nip_quota" name="nip_quota" type="number" min="0" value={v.nip_quota} />
           </Field>
-          <Field id="nip_price" label="NIP — prix TTC (€)">
-            <input id="nip_price" name="nip_price" type="text" inputmode="decimal" value={v.nip_price} />
-          </Field>
-          <Field id="nip_note" label="NIP — petit texte (facultatif)" hint="Affiché sous le nom, sur la page d’achat et le billet">
+          <Field id="nip_note" label="NIP — petit texte (facultatif)" hint="Imprimé sur le billet d’invitation">
             <input id="nip_note" name="nip_note" type="text" maxlength={80} value={v.nip_note} />
           </Field>
         </div>
@@ -1102,7 +1096,8 @@ export const DoorView: FC<{
     </h1>
     <p>
       Vends des places à l’entrée (espèces, terminal) ou génère des billets d’invitation gratuits. Les billets sont créés tout de
-      suite, avec QR code, et prêts à imprimer.
+      suite, avec QR code, et prêts à imprimer. Pour les places <b>NIP</b> (jamais en vente en ligne), choisis la catégorie NIP et le mode
+      « Invitation gratuite ».
     </p>
     {errors.length ? (
       <div class="alert err" role="alert">

@@ -6,7 +6,8 @@ calcul de QR, le plan gratuit limite le CPU à 10 ms par requête) et des frais 
 > ⚠️ Ne déploie qu'après avoir répondu aux questions 🔴 de [QUESTIONS.md](QUESTIONS.md) (TVA, identité légale…) : elles s'impriment sur de vraies factures.
 
 ## 0. Prérequis
-- Compte Cloudflare, domaine géré par Cloudflare (DNS), `npm install` fait, `npx wrangler login` effectué.
+- Compte Cloudflare, `npm install` fait, `npx wrangler login` effectué (une fenêtre de navigateur s'ouvre : tu cliques « Autoriser »).
+- **Un nom de domaine** (≈ 10–15 €/an) géré par Cloudflare : pas nécessaire pour développer et tester sur `*.workers.dev`, mais **indispensable avant d'ouvrir la vente** (emails d'expédition, protection du back-office par chemin, confiance des acheteurs).
 - Compte Stripe (de l'organisateur légal), en **mode test** d'abord.
 
 ## 1. Base de données D1
@@ -16,6 +17,9 @@ npx wrangler d1 create pnk
 npx wrangler d1 migrations apply DB --remote
 ```
 Ne lance **jamais** `seed/dev.sql` en production (données de démonstration).
+La configuration de l'installation (raison sociale, adresse, TVA par défaut) se pose avec un fichier **non commité** :
+`seed/instance.local.sql` (ignoré par git) puis `npx wrangler d1 execute DB --remote --file=seed/instance.local.sql`.
+Tout reste modifiable ensuite dans *Réglages*.
 
 ## 2. Variables (`wrangler.jsonc` → `vars`)
 | Variable | Valeur |
@@ -24,7 +28,6 @@ Ne lance **jamais** `seed/dev.sql` en production (données de démonstration).
 | `MAIL_FROM` | `PNK <billets@tondomaine.be>` |
 | `MAIL_DRIVER` | `cloudflare` (défaut) ou `resend` |
 | `ACCESS_TEAM_DOMAIN` / `ACCESS_AUD` | voir §4 |
-| `BOOTSTRAP_OWNERS` | emails (séparés par des virgules) qui deviennent **propriétaires** à leur 1re connexion |
 | `PAYMENT_PROVIDER` | `stripe` (ne jamais mettre `mock` en prod : il est refusé) |
 
 Domaine personnalisé : ajoute dans `wrangler.jsonc` : `"routes": [{ "pattern": "billets.tondomaine.be", "custom_domain": true }]`.
@@ -32,6 +35,8 @@ Domaine personnalisé : ajoute dans `wrangler.jsonc` : `"routes": [{ "pattern": 
 ## 3. Secrets
 ```bash
 npx wrangler secret put HASH_SECRET            # openssl rand -hex 32
+npx wrangler secret put BOOTSTRAP_OWNERS       # emails (séparés par des virgules) des 1ers PROPRIÉTAIRES, ex. toi@exemple.be
+                                               # (en secret et non dans wrangler.jsonc : le dépôt est public)
 npx wrangler secret put STRIPE_SECRET_KEY      # sk_test_… puis sk_live_… au passage en production
 npx wrangler secret put STRIPE_WEBHOOK_SECRET  # whsec_… (voir §5)
 # facultatifs : TURNSTILE_SECRET (+ TURNSTILE_SITE_KEY en var), RESEND_API_KEY

@@ -3,66 +3,82 @@
 Chaque question indique **ce que j'ai supposé en attendant** (le comportement actuel), pour que tu puisses juste dire « OK » quand
 c'est bon. Les 🔴 bloquent la mise en vente réelle, les 🟠 changent le résultat, les 🟢 sont du confort.
 
-## 🔴 Bloquantes avant de vendre pour de vrai
+## ✅ Déjà répondu
 
-1. ✅ **« NIP » = « Not Very Important Person »** (répondu : clin d'œil punk au VIP). Implémenté : chaque catégorie de places peut avoir un
-   *petit texte* facultatif sous son nom (affiché sur la page d'achat et sur le billet, même texte dans toutes les langues). Il est
-   **pré‑rempli « Not Very Important Person »** pour NIP à la création d'un concert, modifiable ou effaçable. **Reste à confirmer :**
-   NIP est‑il **moins cher ou plus cher** que Standard (ou même prix) ? Les prix proposés par défaut (Standard 15 €, NIP 30 €) ne sont que
-   des exemples à saisir de toute façon. Et NIP se vend‑il en ligne (supposé) ou seulement à la caisse ?
-2. **Qui est l'organisateur légal ?** Raison sociale, forme (ASBL, SRL, asso 1901…), adresse, n° de TVA / d'entreprise, et est-il
-   assujetti à la TVA ? Ces infos s'impriment sur les factures (page *Réglages*).
-   → *Supposé :* champs vides ; le tableau de bord affiche un bandeau jaune « il reste… » tant que ce n'est pas rempli.
-3. **Quel taux de TVA sur les billets ?** Les prix sont saisis **TTC**, la TVA est extraite. → *Supposé :* **6 %** (taux réduit
-   spectacles en Belgique) — **à valider avec ton comptable**, ce n'est qu'un défaut. Modifiable globalement (*Réglages*) ou par concert.
-4. **Pays / juridiction ?** (Belgique, France, Suisse… — je vois du Infomaniak dans tes autres projets.) Impacte la TVA, les mentions
-   obligatoires de facture, les moyens de paiement utiles (Bancontact/Payconiq en BE, iDEAL en NL, TWINT en CH…) et la monnaie.
-   → *Supposé :* Belgique, EUR, fuseau Europe/Brussels.
-5. **Paiement : Stripe, ça te va ?** C'est ce que j'ai branché (Stripe Checkout : cartes, **Apple Pay, Google Pay** automatiques,
-   plus Bancontact/iDEAL/etc. activables dans le tableau de bord Stripe, sans code). Les « appli bancaires » = Bancontact/Payconiq/iDEAL
-   selon le pays. Alternatives si tu préfères (Mollie, très répandu BE/NL, sans abonnement) : le code est prévu pour changer de
-   fournisseur (`src/services/payments/`), ça se fait en une demi-journée.
-   → *Il me faut :* le compte Stripe (au nom de l'organisateur légal) et la liste des moyens de paiement à activer.
-6. **Domaine et intégration au site** : sous quelle adresse la billetterie ? (ex. `billets.tonsite.be`). Le domaine est-il déjà dans
-   Cloudflare (DNS) ? Le site de la salle va-t-il **faire un lien** vers la billetterie (cas le plus simple, supposé) ou veut-il
-   **l'intégrer dans la page** (iframe) ? L'iframe est volontairement bloquée par sécurité ; si tu la veux, je l'autorise pour ton seul domaine.
-7. **Accès à ton compte Cloudflare pour déployer.** Je ne peux pas déployer sans connexion. Il faut : (a) `npx wrangler login`
-   depuis ton ordinateur, ou me donner un jeton d'API limité ; (b) créer l'application **Cloudflare Access** (voir `docs/DEPLOY.md`)
-   car c'est elle qui protège le back-office. Veux-tu que je te guide pas à pas, ou que je déploie quand tu m'as connecté ?
-8. **Qui entre dans le back-office, et avec quel rôle ?** Emails des personnes : *propriétaire* (tout), *gestionnaire* (concerts, ventes,
-   rapports), *contrôle* (scanner à l'entrée uniquement). Comment se connectent-elles : code reçu par email (supposé), compte Google ?
-9. **Textes légaux** : conditions générales de vente (annulation / remboursement / report d'un concert), politique de confidentialité
-   (RGPD : on stocke nom, email, IP hachée), mentions légales. Le site affiche un lien « Conditions de vente » (réglage), mais **le texte doit venir de toi/de la salle**.
-   Je peux te préparer un brouillon à faire valider.
-10. **Email d'expédition** : adresse `billets@ton-domaine` ? Le plus simple est **Cloudflare Email Service** (sans clé API, il faut que le
-    domaine soit sur Cloudflare — la disponibilité/tarif de cette offre est à vérifier dans ton compte). Sinon Resend (gratuit jusqu'à un quota).
+- **NIP = « Not Very Important Person »**, uniquement dans le back-office pour **générer des places gratuites** (invitations). Fait : NIP n'est
+  jamais en vente en ligne (même en forçant le formulaire, testé), gratuit, avec un petit texte imprimé sur le billet ; on le génère depuis
+  *Caisse / invités → Invitation gratuite*.
+- **Organisateur** : raison sociale et adresse de l'ASBL — configurées dans cette installation, **hors du dépôt public** (fichier local ignoré par git).
+- **TVA : 0 % pour commencer**, modifiable à tout moment (*Réglages*, pour tout le site ; ou concert par concert).
+- **Pays : Belgique** (EUR, fuseau Europe/Brussels).
+- **Premier propriétaire** du back-office : renseigné (secret Cloudflare, pas dans le dépôt). Les autres personnes s'ajoutent dans *Équipe*.
+
+## 🔴 Encore bloquantes avant de vendre pour de vrai
+
+1. **Numéro d'entreprise (BCE)** de l'ASBL (+ n° de TVA s'il y en a un) et **code postal** : ils s'impriment sur les factures.
+   Un **email de contact** public (ex. `contact@…`) aussi.
+2. **TVA à 0 % : quelle mention sur la facture ?** Si l'ASBL n'est pas assujettie, une mention du type « TVA non applicable » est en général
+   requise — **à faire valider par le comptable** ; il y a un champ « mentions de pied de facture » dans *Réglages* pour l'écrire.
+3. **Compte Stripe** (le prestataire qui encaisse les paiements) : à créer par un représentant de l'ASBL — voir « Qu'est-ce que Stripe ? » plus bas.
+4. **Nom de domaine** : pas urgent pour continuer à construire/tester, **indispensable avant d'ouvrir la vente** (voir plus bas).
+5. **Accès à Cloudflare pour déployer** : voir plus bas (sans donner ton mot de passe).
+6. **Textes légaux** : conditions générales de vente (annulation / remboursement / report), politique de confidentialité (RGPD : on stocke nom, email,
+   IP hachée), mentions légales. Le site affiche un lien « Conditions de vente » (réglage), **le texte doit venir de l'ASBL**. Je peux préparer un brouillon à faire valider.
+7. **Email d'expédition** (`billets@ton-domaine`) : dépend du domaine (Cloudflare Email Service ou Resend).
+
+### Qu'est-ce que Stripe ?
+Stripe est l'entreprise qui **encaisse les paiements en ligne** à la place de l'ASBL : carte bancaire, Apple Pay, Google Pay, Bancontact… Le
+client paie sur une page Stripe sécurisée (PNK ne voit jamais de numéro de carte) et Stripe verse l'argent sur le compte bancaire de l'ASBL.
+- **Coût** (barème Belgique consulté le 2026-11-19, à revérifier sur stripe.com/be/pricing) : aucun abonnement ni frais d'ouverture ; environ
+  **1,5 % + 0,25 €** par carte européenne standard et **0,35 €** par paiement Bancontact. Exemple : un billet à 15 € payé par carte ≈ 0,48 € de frais.
+- **À créer** : un compte sur stripe.com **au nom de l'ASBL** (nom légal, n° BCE, IBAN de l'ASBL, pièce d'identité d'un administrateur). C'est une
+  démarche en ligne d'environ 15 minutes, à faire par la personne qui représente légalement l'ASBL.
+- **On commence en mode test** (gratuit, sans argent réel, sans vérification d'identité) : on peut tout essayer avant de passer en réel.
+- Alternative : Mollie (très répandu en Belgique, pas d'abonnement non plus). Le code permet d'en changer, mais Stripe est branché et testé.
+
+### Le nom de domaine, est-ce urgent ?
+**Non pour avancer, oui avant de vendre.** Sans domaine, la billetterie fonctionne sur une adresse Cloudflare du type `pnk.xxx.workers.dev` : c'est
+suffisant pour tester. Mais avant l'ouverture il faut un vrai domaine (≈ 10–15 €/an, un `.be` par exemple) parce que :
+- les **emails** (billets, factures) doivent partir d'une adresse à toi (`billets@…`) — sans domaine, pas d'envoi fiable ;
+- le **back‑office doit être protégé uniquement sur `/admin`** pendant que le site reste public : Cloudflare ne sait le faire que sur un domaine à toi ;
+- les acheteurs font plus confiance à `billets.tonsite.be` qu'à une adresse technique. Le site de l'ASBL peut simplement faire un lien dessus.
+Le plus simple : acheter le domaine (ex. via DNS Belgium / un bureau d'enregistrement), l'ajouter à Cloudflare (gratuit), et je configure le reste.
+
+### Comment me donner accès à Cloudflare (sans mot de passe)
+**Ne me donne jamais ton mot de passe, et ne colle pas de clé dans la conversation.** Deux façons sûres :
+- **(recommandé)** Ouvre le Terminal de cet ordinateur et lance `cd ~/Documents/CODE/PNK && npx wrangler login` : une page Cloudflare s'ouvre, tu cliques
+   *Autoriser*. L'outil est alors connecté sur ton Mac ; je ne vois pas ton mot de passe. Pour couper l'accès : `npx wrangler logout`.
+- **Jeton d'API limité** : dans Cloudflare → Mon profil → Jetons d'API, créer un jeton avec seulement les droits Workers, D1, Zero Trust (Access) ; tu le mets
+   toi‑même dans le Terminal (`export CLOUDFLARE_API_TOKEN=…`), jamais dans le chat.
+Dans les deux cas, **je ne déploie rien sans que tu me le demandes explicitement**. Les étapes qui se font dans le tableau de bord Cloudflare
+(application Access, Turnstile, domaine) : je te guide pas à pas ou tu les fais toi‑même (voir `docs/DEPLOY.md`).
 
 ## 🟠 Importantes (le comportement actuel est un choix par défaut)
 
-11. **Forfait Cloudflare** : le plan Workers gratuit limite le temps de calcul par requête (10 ms) — la page « billets » génère des QR et
+8. **Forfait Cloudflare** : le plan Workers gratuit limite le temps de calcul par requête (10 ms) — la page « billets » génère des QR et
     pourrait être limite ; le plan **Workers Payant (≈ 5 $/mois)** est recommandé pour la fiabilité. D1 (base) : le gratuit suffit largement.
-12. **Remboursements et factures** : aujourd'hui le remboursement est **total** (le billet est annulé, la facture est tamponnée « REMBOURSÉE »).
+9. **Remboursements et factures** : aujourd'hui le remboursement est **total** (le billet est annulé, la facture est tamponnée « REMBOURSÉE »).
     Faut-il une **note de crédit numérotée** (souvent obligatoire légalement) et/ou des **remboursements partiels** ? Question à poser au comptable.
-13. **Frais de service** : aucun (prix affiché = prix payé). Veux-tu en ajouter (fixe/%), pour couvrir les frais Stripe ?
-14. **Billets nominatifs et revente** : aujourd'hui le nom du billet = nom de l'acheteur, le QR est transmissible (le premier qui passe, passe).
+10. **Frais de service** : aucun (prix affiché = prix payé). Veux-tu en ajouter (fixe/%), pour couvrir les frais Stripe ?
+11. **Billets nominatifs et revente** : aujourd'hui le nom du billet = nom de l'acheteur, le QR est transmissible (le premier qui passe, passe).
     Veux-tu un nom par billet, une interdiction de transfert, une limite par personne ?
-15. **Contrôle à l'entrée** : le réseau (wifi/4G) est-il fiable dans la salle ? Sinon je développe un **mode hors-ligne** (liste des codes
+12. **Contrôle à l'entrée** : le réseau (wifi/4G) est-il fiable dans la salle ? Sinon je développe un **mode hors-ligne** (liste des codes
     pré-chargée). Combien de portes/scanners ? Avec quels téléphones (iPhone = lecture par jsQR, Android Chrome = lecture native, tous deux prévus) ?
-16. **Impression** : le billet s'imprime en A4 (jusqu'à 3 par page, noir et blanc OK). Besoin d'un format **ticket thermique 80 mm** (imprimante de
+13. **Impression** : le billet s'imprime en A4 (jusqu'à 3 par page, noir et blanc OK). Besoin d'un format **ticket thermique 80 mm** (imprimante de
     caisse) ou d'un **PDF** joint à l'email ?
-17. **Jauge et placement** : seulement des quotas par catégorie (debout / général), pas de plan de salle numéroté. C'est bon ?
-18. **Affiche des concerts** : actuellement on colle l'URL d'une image hébergée ailleurs. Veux-tu pouvoir **envoyer l'image** directement (stockage R2) ?
-19. **Ton et langues** : le public est **tutoyé** (« Tes billets pour… ») — ça colle au punk mais est-ce voulu pour tout le monde ? Le back-office
+14. **Jauge et placement** : seulement des quotas par catégorie (debout / général), pas de plan de salle numéroté. C'est bon ?
+15. **Affiche des concerts** : actuellement on colle l'URL d'une image hébergée ailleurs. Veux-tu pouvoir **envoyer l'image** directement (stockage R2) ?
+16. **Ton et langues** : le public est **tutoyé** (« Tes billets pour… ») — ça colle au punk mais est-ce voulu pour tout le monde ? Le back-office
     est en français seulement : à traduire en EN/NL ?
 
 ## 🟢 Confort / plus tard
 
-20. **Titulaire du copyright** dans `LICENSE`/en-têtes : j'ai mis « PNK contributors » (neutre). Un nom (toi ? l'asso ?) à y mettre ?
-21. **Dépôt GitHub** : créé en **public** sous ton compte (AGPL-3.0). Le nom `PNK` te convient ? Souhaites-tu l'héberger plutôt dans une organisation ?
-22. **Apple Wallet / Google Wallet** (billet dans le portefeuille du téléphone), **codes promo**, **pré-ventes**, **abonnements/pass**, **liste d'attente** : hors périmètre actuel.
-23. **Alertes** : être prévenu (email) si un envoi échoue ou si un webhook de paiement ne passe pas ? Aujourd'hui tout est visible dans la table `email_outbox`/journal mais pas notifié.
-24. **Données personnelles** : durée de conservation (ex. 3 ans), procédure d'effacement sur demande ; inscription newsletter (opt-in) ?
-25. **Données de démonstration** : `seed/dev.sql` sert au développement local uniquement. À supprimer du déploiement (déjà non utilisé en prod).
+17. **Titulaire du copyright** dans `LICENSE`/en-têtes : j'ai mis « PNK contributors » (neutre). Un nom (toi ? l'asso ?) à y mettre ?
+18. **Dépôt GitHub** : créé en **public** sous ton compte (AGPL-3.0). Le nom `PNK` te convient ? Souhaites-tu l'héberger plutôt dans une organisation ?
+19. **Apple Wallet / Google Wallet** (billet dans le portefeuille du téléphone), **codes promo**, **pré-ventes**, **abonnements/pass**, **liste d'attente** : hors périmètre actuel.
+20. **Alertes** : être prévenu (email) si un envoi échoue ou si un webhook de paiement ne passe pas ? Aujourd'hui tout est visible dans la table `email_outbox`/journal mais pas notifié.
+21. **Données personnelles** : durée de conservation (ex. 3 ans), procédure d'effacement sur demande ; inscription newsletter (opt-in) ?
+22. **Données de démonstration** : `seed/dev.sql` sert au développement local uniquement. À supprimer du déploiement (déjà non utilisé en prod).
 
 ## Ce que je ne peux pas vérifier seul (recette à faire avec toi au déploiement)
 Voir `docs/DEPLOY.md`, section *Recette* : vrai paiement Stripe (mode test), vraie connexion Cloudflare Access, vrai email reçu,

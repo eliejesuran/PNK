@@ -21,9 +21,9 @@ INSERT INTO events (id, slug, title, subtitle, description_fr, description_en, d
 
 INSERT INTO ticket_types (id, event_id, name_fr, name_en, name_nl, price_cents, quota, sort, online) VALUES
   (1, 1, 'Standard', 'Standard', 'Standard', 1500, 140, 0, 1),
-  (2, 1, 'NIP', 'NIP', 'NIP', 3000, 20, 1, 1),
+  (2, 1, 'NIP', 'NIP', 'NIP', 0, 20, 1, 0),
   (3, 2, 'Standard', 'Standard', 'Standard', 1200, 6, 0, 1),
-  (4, 2, 'NIP', 'NIP', 'NIP', 2500, 4, 1, 1),
+  (4, 2, 'NIP', 'NIP', 'NIP', 0, 4, 1, 0),
   (5, 3, 'Standard', 'Standard', 'Standard', 1000, 80, 0, 1);
 
 UPDATE ticket_types SET note = 'Not Very Important Person' WHERE name_fr = 'NIP';
@@ -36,11 +36,11 @@ INSERT INTO orders (id, token, event_id, status, channel, payment_method, provid
   (4, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'lou@example.com',     'Lou Martin',      'fr', 3000, 600, CAST(strftime('%Y','now') AS INTEGER), 4, strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days')),
   (5, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'ines@example.com',    'Inès Lambert',    'fr', 6000, 600, CAST(strftime('%Y','now') AS INTEGER), 5, strftime('%Y-%m-%dT%H:%M:%fZ','now','-3 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-3 days')),
   (6, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'noa@example.com',     'Noa Vermeulen',   'nl', 3000, 600, CAST(strftime('%Y','now') AS INTEGER), 6, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days')),
-  (7, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'vip@example.com',     'Alex Vandenberghe','fr', 3000, 600, CAST(strftime('%Y','now') AS INTEGER), 7, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days')),
-  (8, substr(hex(randomblob(16)), 1, 32), 2, 'paid', 'online', 'online', 'mock', 'bande@example.com',   'Marie Leroy',     'fr', 4800, 600, CAST(strftime('%Y','now') AS INTEGER), 8, strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days'));
+  (7, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'guest', 'free', 'none', 'potes@example.com', 'Les potes du groupe', 'fr', 0, 0, NULL, NULL, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days')),
+  (8, substr(hex(randomblob(16)), 1, 32), 2, 'paid', 'online', 'online', 'mock', 'bande@example.com',   'Marie Leroy',     'fr', 4800, 600, CAST(strftime('%Y','now') AS INTEGER), 7, strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days'));
 
 INSERT INTO order_items (order_id, ticket_type_id, qty, unit_price_cents) VALUES
-  (1, 1, 2, 1500), (2, 1, 1, 1500), (3, 1, 3, 1500), (4, 1, 2, 1500), (5, 1, 4, 1500), (6, 1, 2, 1500), (7, 2, 1, 3000), (8, 3, 4, 1200);
+  (1, 1, 2, 1500), (2, 1, 1, 1500), (3, 1, 3, 1500), (4, 1, 2, 1500), (5, 1, 4, 1500), (6, 1, 2, 1500), (7, 2, 2, 0), (8, 3, 4, 1200);
 
 -- Un billet par place, avec des codes aléatoires
 INSERT INTO tickets (code, order_id, event_id, ticket_type_id)

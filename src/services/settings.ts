@@ -82,7 +82,7 @@ export function setupGaps(s: Settings): string[] {
   const gaps: string[] = [];
   if (!s.org_legal_name) gaps.push('Raison sociale de l’organisateur (obligatoire sur les factures)');
   if (!s.org_address) gaps.push('Adresse de l’organisateur (obligatoire sur les factures)');
-  if (!s.org_vat_number) gaps.push('Numéro de TVA / d’entreprise (obligatoire sur les factures si assujetti)');
+  if (!s.org_vat_number) gaps.push('Numéro d’entreprise (BCE) et/ou de TVA (obligatoire sur les factures)');
   if (!s.org_email) gaps.push('Email de contact');
   if (!s.terms_url) gaps.push('Lien vers les conditions de vente');
   return gaps;

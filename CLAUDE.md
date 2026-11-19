@@ -61,7 +61,7 @@ npx wrangler d1 migrations apply DB --remote   # prod : voir docs/DEPLOY.md
    `test/unit.test.ts` vérifient la parité des clés et des `{variables}`).
 7. **Échapper** : JSX échappe seul ; pour du HTML construit à la main (emails) utiliser `esc()`. Les CSV passent par `csvCell` (anti-injection de formules).
 8. **Tout fichier source** commence par `// SPDX-License-Identifier: AGPL-3.0-or-later` (ou `/* … */` / `--`).
-9. **Secrets** : jamais dans le dépôt. `.dev.vars` est ignoré ; secrets de prod via `wrangler secret put`.
+9. **Secrets et données d'installation** : jamais dans le dépôt (public !). `.dev.vars` est ignoré ; secrets de prod via `wrangler secret put` (dont `BOOTSTRAP_OWNERS`, les emails des premiers propriétaires). La configuration propre à l'organisation (raison sociale, adresse, TVA par défaut…) vit dans `seed/*.local.sql` (ignoré par git) et dans la table `settings`. Ne jamais écrire emails, noms ou adresses réels dans le code, les docs ou les tests.
 10. Tout changement de logique métier = un test (ou plus) ; les bugs corrigés laissent un test de non-régression.
 
 ## Pièges connus (déjà rencontrés)
@@ -81,7 +81,7 @@ npx wrangler d1 migrations apply DB --remote   # prod : voir docs/DEPLOY.md
 - [x] Parcours public complet : accueil, page concert (3 langues), achat, page commande + billets QR imprimables, facture, emails.
 - [x] Stock sans survente (testé : 20 achats simultanés / 5 places ; chaos aléatoire ×4 graines), paiement tardif, auto-remboursement.
 - [x] Stripe Checkout (REST) + webhook signé idempotent + filet de sécurité au retour. **Testé contre une API simulée, jamais contre le vrai Stripe.**
-- [x] Catégories de places : nom FR/EN/NL, prix, quota, vente en ligne oui/non, **petit texte** (NIP = « Not Very Important Person », réponse du propriétaire). Back-office : tableau de bord (KPI, courbe, canaux, remplissage), concerts (+ Standard/NIP/types libres, publier, dupliquer, annuler),
+- [x] Catégories de places : nom FR/EN/NL, prix, quota, vente en ligne oui/non, **petit texte**. **NIP = « Not Very Important Person » = invitations gratuites, jamais en vente en ligne** (créé à prix 0 et `online = 0` par le formulaire de concert ; généré via *Caisse / invités → Invitation gratuite*). Back-office : tableau de bord (KPI, courbe, canaux, remplissage), concerts (+ Standard/NIP/types libres, publier, dupliquer, annuler),
       salles, commandes (recherche, remboursement, renvoi d'email), caisse/invités (impression directe), rapports + exports CSV,
       réglages, équipe (3 rôles), journal d'audit.
 - [x] Scanner d'entrée (caméra BarcodeDetector/jsQR + saisie manuelle, anti double passage atomique, compteur).
@@ -102,7 +102,7 @@ npx wrangler d1 migrations apply DB --remote   # prod : voir docs/DEPLOY.md
 - [ ] Mode scanner hors-ligne (liste de codes en cache) si le réseau de la salle est mauvais.
 - [ ] Pages légales (CGV, confidentialité) : le lien CGV est un réglage, le texte reste à fournir par la salle.
 
-**Bloqué en attente du propriétaire** : voir `docs/QUESTIONS.md` (TVA/identité légale, prix de NIP vs Standard, pays, domaine, comptes Stripe/Cloudflare). « Sens de NIP » : répondu.
+**Bloqué en attente du propriétaire** : voir `docs/QUESTIONS.md` — n° BCE + code postal + mention de facture à TVA 0 %, compte Stripe (de l'ASBL), nom de domaine (non urgent pour tester, requis avant la vente), connexion `wrangler login`, textes légaux, email d'expédition. Déjà répondu : NIP, identité de l'organisateur, TVA 0 % (modifiable), Belgique, premier propriétaire.
 
 ## Déroulé de travail attendu
 1. `npm run check` avant chaque commit. Messages de commit en français, concis, à l'impératif ; terminer par la ligne de co-auteur demandée.

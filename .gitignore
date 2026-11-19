@@ -9,3 +9,6 @@ node_modules/
 .DS_Store
 dist/
 coverage/
+
+# Configuration propre a une installation (ASBL, adresse...) : jamais dans le depot public
+seed/*.local.sql

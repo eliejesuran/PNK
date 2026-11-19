@@ -118,7 +118,7 @@ interface ParsedEvent {
 
 const FORM_KEYS: (keyof EventFormValues)[] = [
   'title', 'subtitle', 'slug', 'venue_id', 'starts', 'doors', 'sales_open', 'sales_close', 'max_per_order', 'image_url', 'vat',
-  'description_fr', 'description_en', 'description_nl', 'std_price', 'std_quota', 'std_note', 'nip_price', 'nip_quota', 'nip_note',
+  'description_fr', 'description_en', 'description_nl', 'std_price', 'std_quota', 'std_note', 'nip_quota', 'nip_note',
 ];
 
 function parseEventBody(b: Body, tz: string): { values: EventFormValues; errors: string[]; data: ParsedEvent | null } {
@@ -197,9 +197,7 @@ adminRoutes.post('/admin/events', async (c) => {
   const stdQuota = clampInt(values.std_quota, 0, 100000, 0);
   const nipQuota = clampInt(values.nip_quota, 0, 100000, 0);
   const stdPrice = parseEuroToCents(values.std_price || '0');
-  const nipPrice = parseEuroToCents(values.nip_price || '0');
   if (stdQuota > 0 && stdPrice === null) errors.push('Prix Standard invalide.');
-  if (nipQuota > 0 && nipPrice === null) errors.push('Prix NIP invalide.');
 
   if (data) {
     const venue = await getVenue(db, data.venueId);
@@ -227,7 +225,14 @@ adminRoutes.post('/admin/events', async (c) => {
   const typeSql = 'INSERT INTO ticket_types (event_id, name_fr, name_en, name_nl, price_cents, quota, sort, note) VALUES (?1, ?2, ?2, ?2, ?3, ?4, ?5, ?6)';
   const stmts: D1PreparedStatement[] = [];
   if (stdQuota > 0) stmts.push(db.prepare(typeSql).bind(eventId, 'Standard', stdPrice, stdQuota, 0, clean(values.std_note, 80)));
-  if (nipQuota > 0) stmts.push(db.prepare(typeSql).bind(eventId, 'NIP', nipPrice, nipQuota, 1, clean(values.nip_note, 80)));
+  // NIP = « Not Very Important Person » : invitations gratuites, jamais en vente en ligne (générées depuis « Caisse / invités »).
+  if (nipQuota > 0) {
+    stmts.push(
+      db
+        .prepare('INSERT INTO ticket_types (event_id, name_fr, name_en, name_nl, price_cents, quota, sort, online, note) VALUES (?1, ?2, ?2, ?2, 0, ?3, 1, 0, ?4)')
+        .bind(eventId, 'NIP', nipQuota, clean(values.nip_note, 80)),
+    );
+  }
   if (stmts.length) await db.batch(stmts);
   await audit(db, staff.email, 'event.create', 'event', eventId, { title: data.title, slug });
   return back(c, `/admin/events/${eventId}`, 'ok', 'Concert créé en brouillon. Vérifie les infos puis publie-le.');

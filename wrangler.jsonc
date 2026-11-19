@@ -38,8 +38,8 @@
     "BASE_URL": "https://billets.example.org",
     // Cloudflare Access : domaine d'équipe (xxx.cloudflareaccess.com) et AUD de l'application.
     "ACCESS_TEAM_DOMAIN": "",
-    "ACCESS_AUD": "",
-    // Emails (séparés par des virgules) qui deviennent « owner » à leur première connexion.
-    "BOOTSTRAP_OWNERS": ""
+    "ACCESS_AUD": ""
+    // BOOTSTRAP_OWNERS (emails des premiers propriétaires) : à poser en SECRET, pas ici (ce fichier est public) :
+    //   npx wrangler secret put BOOTSTRAP_OWNERS
   }
 }

@@ -113,7 +113,6 @@ describe('gestion des concerts', () => {
     std_quota: '100',
     std_price: '12,50',
     nip_quota: '10',
-    nip_price: '30',
     nip_note: 'Not Very Important Person',
     description_fr: 'Du bruit.\nBeaucoup.',
     ...extra,
@@ -126,10 +125,11 @@ describe('gestion des concerts', () => {
     const ev = (await e.DB.prepare('SELECT * FROM events').first<{ id: number; slug: string; status: string; doors_at: string; starts_at: string }>())!;
     expect(ev.slug).toBe('bruit-blanc-les-cafards');
     expect(ev.status).toBe('draft');
-    const types = await e.DB.prepare('SELECT name_fr, price_cents, quota, note FROM ticket_types ORDER BY sort').all<{ name_fr: string; price_cents: number; quota: number; note: string }>();
+    const types = await e.DB.prepare('SELECT name_fr, price_cents, quota, note, online FROM ticket_types ORDER BY sort').all<{ name_fr: string; price_cents: number; quota: number; note: string; online: number }>();
     expect(types.results).toEqual([
-      { name_fr: 'Standard', price_cents: 1250, quota: 100, note: '' },
-      { name_fr: 'NIP', price_cents: 3000, quota: 10, note: 'Not Very Important Person' },
+      { name_fr: 'Standard', price_cents: 1250, quota: 100, note: '', online: 1 },
+      // NIP : invitations gratuites, jamais en vente en ligne
+      { name_fr: 'NIP', price_cents: 0, quota: 10, note: 'Not Very Important Person', online: 0 },
     ]);
     expect((await http(`/e/${ev.slug}`)).status).toBe(404); // brouillon : invisible
 
@@ -143,37 +143,45 @@ describe('gestion des concerts', () => {
     expect(await (await http('/')).text()).toContain('/e/bruit-blanc-les-cafards');
   });
 
-  it('NIP = « Not Very Important Person » : petit texte proposé à la création, modifiable, copié, affiché et échappé', async () => {
+  it('NIP = « Not Very Important Person » : invitations gratuites réservées au back-office', async () => {
     const venueId = await createVenue();
-    // le formulaire de création propose le texte déjà rempli
-    expect(await (await http('/admin/events/new')).text()).toContain('value="Not Very Important Person"');
+    // le formulaire de création propose le petit texte déjà rempli, et aucun prix pour NIP
+    const form = await (await http('/admin/events/new')).text();
+    expect(form).toContain('value="Not Very Important Person"');
+    expect(form).not.toContain('name="nip_price"');
     await http('/admin/events', { form: eventForm(venueId, { slug: 'nip-test' }) });
     const ev = (await e.DB.prepare("SELECT id FROM events WHERE slug = 'nip-test'").first<{ id: number }>())!;
     await http(`/admin/events/${ev.id}/status`, { form: { status: 'published' } });
-
-    const page = await (await http('/e/nip-test')).text();
-    expect(page).toContain('<div class="note">Not Very Important Person</div>');
-
-    // billet : la note suit la catégorie
     const nip = (await e.DB.prepare("SELECT id FROM ticket_types WHERE name_fr = 'NIP'").first<{ id: number }>())!.id;
-    await http('/admin/door', { form: { type_id: String(nip), qty: '1', mode: 'guest', name: 'Zoé' } });
-    const token = (await e.DB.prepare('SELECT token FROM orders').first<{ token: string }>())!.token;
-    expect(await (await http(`/o/${token}`)).text()).toContain('Not Very Important Person');
 
-    // modification + XSS + limite de 80 caractères
-    await http(`/admin/types/${nip}`, { form: { name_fr: 'NIP', price: '30', quota: '10', online: '1', note: `<img src=x onerror=alert(1)>${'x'.repeat(200)}` } });
-    const saved = (await e.DB.prepare('SELECT note FROM ticket_types WHERE id = ?1').bind(nip).first<{ note: string }>())!.note;
-    expect(saved.length).toBe(80);
+    // invisible et non achetable en ligne, même en forçant le formulaire
+    const page = await (await http('/e/nip-test')).text();
+    expect(page).not.toContain('NIP');
+    expect(page).not.toContain('Not Very Important Person');
+    const standard = (await e.DB.prepare("SELECT id FROM ticket_types WHERE name_fr = 'Standard'").first<{ id: number }>())!.id;
+    const hack = await http('/e/nip-test/checkout', { form: { lang: 'fr', name: 'Pirate', email: 'p@example.com', terms: '1', [`qty_${standard}`]: '0', [`qty_${nip}`]: '2' } });
+    expect(hack.status).toBe(400);
+    expect(await count("SELECT COUNT(*) AS n FROM orders")).toBe(0);
+
+    // générable depuis « Caisse / invités » : billet gratuit avec la mention
+    expect((await http('/admin/door', { form: { type_id: String(nip), qty: '3', mode: 'guest', name: 'Zoé' } })).status).toBe(303);
+    const o = (await e.DB.prepare('SELECT token, total_cents, invoice_seq FROM orders').first<{ token: string; total_cents: number; invoice_seq: number | null }>())!;
+    expect(o).toMatchObject({ total_cents: 0, invoice_seq: null });
+    const ticket = await (await http(`/o/${o.token}`)).text();
+    expect(ticket).toContain('NIP');
+    expect(ticket).toContain('Not Very Important Person');
+    expect(await count('SELECT COUNT(*) AS n FROM tickets')).toBe(3);
+
+    // petit texte : modifiable, limité à 80 caractères, échappé (testé sur une catégorie en vente), copié à la duplication
+    await http(`/admin/types/${standard}`, { form: { name_fr: 'Standard', price: '12,5', quota: '100', online: '1', note: `<img src=x onerror=alert(1)>${'x'.repeat(200)}` } });
+    expect((await e.DB.prepare('SELECT note FROM ticket_types WHERE id = ?1').bind(standard).first<{ note: string }>())!.note.length).toBe(80);
     const html = await (await http('/e/nip-test')).text();
     expect(html).not.toContain('<img src=x');
     expect(html).toContain('&lt;img src=x');
-
-    // la copie d'un concert garde les petits textes ; on peut aussi les effacer
-    await http(`/admin/types/${nip}`, { form: { name_fr: 'NIP', price: '30', quota: '10', online: '1', note: 'Pas très important' } });
     await http(`/admin/events/${ev.id}/duplicate`, { method: 'POST' });
-    const copied = await e.DB.prepare("SELECT note FROM ticket_types WHERE name_fr = 'NIP' AND event_id != ?1").bind(ev.id).first<{ note: string }>();
-    expect(copied?.note).toBe('Pas très important');
-    await http(`/admin/types/${nip}`, { form: { name_fr: 'NIP', price: '30', quota: '10', online: '1', note: '' } });
+    const copied = await e.DB.prepare("SELECT note, online, price_cents FROM ticket_types WHERE name_fr = 'NIP' AND event_id != ?1").bind(ev.id).first();
+    expect(copied).toEqual({ note: 'Not Very Important Person', online: 0, price_cents: 0 });
+    await http(`/admin/types/${standard}`, { form: { name_fr: 'Standard', price: '12,5', quota: '100', online: '1', note: '' } });
     expect(await (await http('/e/nip-test')).text()).not.toContain('class="note"');
   });
 
