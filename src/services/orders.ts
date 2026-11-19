@@ -169,7 +169,7 @@ export async function getOrderItems(db: D1Database, orderId: number): Promise<Or
 export async function getOrderTickets(db: D1Database, orderId: number): Promise<TicketWithType[]> {
   const { results } = await db
     .prepare(
-      `SELECT t.*, tt.name_fr, tt.name_en, tt.name_nl FROM tickets t
+      `SELECT t.*, tt.name_fr, tt.name_en, tt.name_nl, tt.note FROM tickets t
        JOIN ticket_types tt ON tt.id = t.ticket_type_id WHERE t.order_id = ?1 ORDER BY tt.sort, t.id`,
     )
     .bind(orderId)

@@ -184,6 +184,7 @@ details.opt summary { cursor: pointer; font-weight: 700; }
 .tt .name { font-family: var(--display); font-size: 1.6rem; text-transform: uppercase; line-height: 1; }
 .tt .price { font-weight: 700; }
 .tt.out { opacity: 0.55; }
+.tt .note { font-family: var(--marker); color: var(--red-deep); font-size: 0.95rem; line-height: 1.2; transform: rotate(-1deg); transform-origin: left; margin: 0.15rem 0; }
 .tt .left { color: var(--red-deep); font-weight: 700; font-size: 0.9rem; }
 .stepper { display: inline-flex; border: 3px solid var(--ink); background: #fff; }
 .stepper button { font-family: var(--display); font-size: 1.5rem; width: 2.6rem; border: 0; background: var(--ink); color: var(--paper); cursor: pointer; line-height: 1; }

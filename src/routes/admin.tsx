@@ -118,7 +118,7 @@ interface ParsedEvent {
 
 const FORM_KEYS: (keyof EventFormValues)[] = [
   'title', 'subtitle', 'slug', 'venue_id', 'starts', 'doors', 'sales_open', 'sales_close', 'max_per_order', 'image_url', 'vat',
-  'description_fr', 'description_en', 'description_nl', 'std_price', 'std_quota', 'nip_price', 'nip_quota',
+  'description_fr', 'description_en', 'description_nl', 'std_price', 'std_quota', 'std_note', 'nip_price', 'nip_quota', 'nip_note',
 ];
 
 function parseEventBody(b: Body, tz: string): { values: EventFormValues; errors: string[]; data: ParsedEvent | null } {
@@ -224,10 +224,10 @@ adminRoutes.post('/admin/events', async (c) => {
     .bind(slug, data.title, data.subtitle, data.descFr, data.descEn, data.descNl, data.venueId, data.startsAt, data.doorsAt, data.salesOpenAt, data.salesCloseAt, data.maxPerOrder, data.imageUrl, data.vatBp)
     .run();
   const eventId = Number(res.meta.last_row_id);
-  const typeSql = 'INSERT INTO ticket_types (event_id, name_fr, name_en, name_nl, price_cents, quota, sort) VALUES (?1, ?2, ?2, ?2, ?3, ?4, ?5)';
+  const typeSql = 'INSERT INTO ticket_types (event_id, name_fr, name_en, name_nl, price_cents, quota, sort, note) VALUES (?1, ?2, ?2, ?2, ?3, ?4, ?5, ?6)';
   const stmts: D1PreparedStatement[] = [];
-  if (stdQuota > 0) stmts.push(db.prepare(typeSql).bind(eventId, 'Standard', stdPrice, stdQuota, 0));
-  if (nipQuota > 0) stmts.push(db.prepare(typeSql).bind(eventId, 'NIP', nipPrice, nipQuota, 1));
+  if (stdQuota > 0) stmts.push(db.prepare(typeSql).bind(eventId, 'Standard', stdPrice, stdQuota, 0, clean(values.std_note, 80)));
+  if (nipQuota > 0) stmts.push(db.prepare(typeSql).bind(eventId, 'NIP', nipPrice, nipQuota, 1, clean(values.nip_note, 80)));
   if (stmts.length) await db.batch(stmts);
   await audit(db, staff.email, 'event.create', 'event', eventId, { title: data.title, slug });
   return back(c, `/admin/events/${eventId}`, 'ok', 'Concert créé en brouillon. Vérifie les infos puis publie-le.');
@@ -330,8 +330,8 @@ adminRoutes.post('/admin/events/:id/duplicate', async (c) => {
   const newId = Number(res.meta.last_row_id);
   await db
     .prepare(
-      `INSERT INTO ticket_types (event_id, name_fr, name_en, name_nl, price_cents, quota, sort, online)
-       SELECT ?1, name_fr, name_en, name_nl, price_cents, quota, sort, online FROM ticket_types WHERE event_id = ?2`,
+      `INSERT INTO ticket_types (event_id, name_fr, name_en, name_nl, price_cents, quota, sort, online, note)
+       SELECT ?1, name_fr, name_en, name_nl, price_cents, quota, sort, online, note FROM ticket_types WHERE event_id = ?2`,
     )
     .bind(newId, id)
     .run();
@@ -359,6 +359,7 @@ interface TypeInput {
   price: number;
   quota: number;
   online: number;
+  note: string;
 }
 
 function parseType(b: Body): { data?: TypeInput; error?: string } {
@@ -376,6 +377,7 @@ function parseType(b: Body): { data?: TypeInput; error?: string } {
       price,
       quota: Number.parseInt(quotaRaw, 10),
       online: str(b, 'online') === '1' ? 1 : 0,
+      note: clean(str(b, 'note'), 80),
     },
   };
 }
@@ -393,8 +395,8 @@ adminRoutes.post('/admin/events/:id/types', async (c) => {
     return back(c, `/admin/events/${id}`, 'err', `Total des quotas (${(q?.n ?? 0) + data.quota}) supérieur à la capacité de la salle (${e.venue_capacity}).`);
   }
   const r = await db
-    .prepare('INSERT INTO ticket_types (event_id, name_fr, name_en, name_nl, price_cents, quota, sort, online) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)')
-    .bind(id, data.name_fr, data.name_en, data.name_nl, data.price, data.quota, (q?.m ?? -1) + 1, data.online)
+    .prepare('INSERT INTO ticket_types (event_id, name_fr, name_en, name_nl, price_cents, quota, sort, online, note) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)')
+    .bind(id, data.name_fr, data.name_en, data.name_nl, data.price, data.quota, (q?.m ?? -1) + 1, data.online, data.note)
     .run();
   await audit(db, c.get('staff')!.email, 'type.create', 'ticket_type', Number(r.meta.last_row_id), { event: id, ...data });
   return back(c, `/admin/events/${id}`, 'ok', `Catégorie « ${data.name_fr} » ajoutée.`);
@@ -425,8 +427,8 @@ adminRoutes.post('/admin/types/:id', async (c) => {
     return back(c, home, 'err', `Total des quotas (${(others?.n ?? 0) + data.quota}) supérieur à la capacité de la salle (${e.venue_capacity}).`);
   }
   await db
-    .prepare('UPDATE ticket_types SET name_fr = ?2, name_en = ?3, name_nl = ?4, price_cents = ?5, quota = ?6, online = ?7, sort = ?8 WHERE id = ?1')
-    .bind(id, data.name_fr, data.name_en, data.name_nl, data.price, data.quota, data.online, clampInt(str(body, 'sort'), -1000, 1000, 0))
+    .prepare('UPDATE ticket_types SET name_fr = ?2, name_en = ?3, name_nl = ?4, price_cents = ?5, quota = ?6, online = ?7, sort = ?8, note = ?9 WHERE id = ?1')
+    .bind(id, data.name_fr, data.name_en, data.name_nl, data.price, data.quota, data.online, clampInt(str(body, 'sort'), -1000, 1000, 0), data.note)
     .run();
   await audit(db, c.get('staff')!.email, 'type.update', 'ticket_type', id, data);
   return back(c, home, 'ok', `Catégorie « ${data.name_fr} » enregistrée.`);

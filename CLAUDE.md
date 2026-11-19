@@ -42,7 +42,7 @@ npx wrangler d1 migrations apply DB --remote   # prod : voir docs/DEPLOY.md
 | `src/routes/admin.tsx`, `admin-ops.tsx` | back-office : dashboard, concerts, types, salles / commandes, caisse, exports, réglages, équipe, journal, `/scan`, `/api/scan` |
 | `src/views/*.tsx` | JSX : `layout`, `public`, `admin`, `admin2`, `errors` |
 | `src/i18n/` | `fr.ts` (référence, définit `Dict`), `en.ts`, `nl.ts`, `index.ts` (`t()`, `pickLang`) |
-| `migrations/0001_init.sql` | schéma complet. **Ne jamais modifier une migration déjà déployée : en ajouter une** |
+| `migrations/` | `0001_init.sql` schéma complet ; `0002_ticket_type_note.sql` (petit texte des catégories). **Ne jamais modifier une migration déjà publiée : en ajouter une** |
 | `public/` | assets statiques (servis avant le Worker) : `pnk.css`, `app.js`, `scan.js`, polices, jsQR |
 | `test/` | `unit`, `flow` (achat), `admin`, `payments-mail`, `invariants` (chaos), `qr-decode` |
 
@@ -81,13 +81,13 @@ npx wrangler d1 migrations apply DB --remote   # prod : voir docs/DEPLOY.md
 - [x] Parcours public complet : accueil, page concert (3 langues), achat, page commande + billets QR imprimables, facture, emails.
 - [x] Stock sans survente (testé : 20 achats simultanés / 5 places ; chaos aléatoire ×4 graines), paiement tardif, auto-remboursement.
 - [x] Stripe Checkout (REST) + webhook signé idempotent + filet de sécurité au retour. **Testé contre une API simulée, jamais contre le vrai Stripe.**
-- [x] Back-office : tableau de bord (KPI, courbe, canaux, remplissage), concerts (+ Standard/NIP/types libres, publier, dupliquer, annuler),
+- [x] Catégories de places : nom FR/EN/NL, prix, quota, vente en ligne oui/non, **petit texte** (NIP = « Not Very Important Person », réponse du propriétaire). Back-office : tableau de bord (KPI, courbe, canaux, remplissage), concerts (+ Standard/NIP/types libres, publier, dupliquer, annuler),
       salles, commandes (recherche, remboursement, renvoi d'email), caisse/invités (impression directe), rapports + exports CSV,
       réglages, équipe (3 rôles), journal d'audit.
 - [x] Scanner d'entrée (caméra BarcodeDetector/jsQR + saisie manuelle, anti double passage atomique, compteur).
 - [x] Sécurité : Cloudflare Access (JWT RS256) + rôles, CSP, CSRF, anti-abus (limiteur + Turnstile optionnel), audit.
 - [x] 3 langues publiques, style punk, responsive (vérifié en mobile 375 px).
-- [x] 121 tests verts ; `tsc` strict propre.
+- [x] 122 tests verts ; `tsc` strict propre.
 
 **Pas vérifié en réel (aucun accès aux comptes)** — à faire au déploiement, voir `docs/DEPLOY.md` §Recette :
 - [ ] Vrai paiement Stripe (mode test) + webhook, Apple Pay / Google Pay / Bancontact.
@@ -102,7 +102,7 @@ npx wrangler d1 migrations apply DB --remote   # prod : voir docs/DEPLOY.md
 - [ ] Mode scanner hors-ligne (liste de codes en cache) si le réseau de la salle est mauvais.
 - [ ] Pages légales (CGV, confidentialité) : le lien CGV est un réglage, le texte reste à fournir par la salle.
 
-**Bloqué en attente du propriétaire** : voir `docs/QUESTIONS.md` (TVA/identité légale, sens de « NIP », pays, domaine, comptes Stripe/Cloudflare).
+**Bloqué en attente du propriétaire** : voir `docs/QUESTIONS.md` (TVA/identité légale, prix de NIP vs Standard, pays, domaine, comptes Stripe/Cloudflare). « Sens de NIP » : répondu.
 
 ## Déroulé de travail attendu
 1. `npm run check` avant chaque commit. Messages de commit en français, concis, à l'impératif ; terminer par la ligne de co-auteur demandée.

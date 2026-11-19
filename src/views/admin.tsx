@@ -371,8 +371,10 @@ export interface EventFormValues {
   description_nl: string;
   std_price: string;
   std_quota: string;
+  std_note: string;
   nip_price: string;
   nip_quota: string;
+  nip_note: string;
 }
 
 export function eventToForm(e: EventRow, tz: string): EventFormValues {
@@ -393,8 +395,10 @@ export function eventToForm(e: EventRow, tz: string): EventFormValues {
     description_nl: e.description_nl,
     std_price: '',
     std_quota: '',
+    std_note: '',
     nip_price: '',
     nip_quota: '',
+    nip_note: '',
   };
 }
 
@@ -415,8 +419,10 @@ export const emptyEventForm = (venueId?: number): EventFormValues => ({
   description_nl: '',
   std_price: '15',
   std_quota: '100',
+  std_note: '',
   nip_price: '30',
   nip_quota: '10',
+  nip_note: 'Not Very Important Person',
 });
 
 const EventFields: FC<{ v: EventFormValues; venues: Venue[]; isNew: boolean; defaultVat: number }> = ({ v, venues, isNew, defaultVat }) => (
@@ -489,11 +495,17 @@ const EventFields: FC<{ v: EventFormValues; venues: Venue[]; isNew: boolean; def
           <Field id="std_price" label="Standard — prix TTC (€)">
             <input id="std_price" name="std_price" type="text" inputmode="decimal" value={v.std_price} />
           </Field>
+          <Field id="std_note" label="Standard — petit texte (facultatif)">
+            <input id="std_note" name="std_note" type="text" maxlength={80} value={v.std_note} />
+          </Field>
           <Field id="nip_quota" label="NIP — nombre de places">
             <input id="nip_quota" name="nip_quota" type="number" min="0" value={v.nip_quota} />
           </Field>
           <Field id="nip_price" label="NIP — prix TTC (€)">
             <input id="nip_price" name="nip_price" type="text" inputmode="decimal" value={v.nip_price} />
+          </Field>
+          <Field id="nip_note" label="NIP — petit texte (facultatif)" hint="Affiché sous le nom, sur la page d’achat et le billet">
+            <input id="nip_note" name="nip_note" type="text" maxlength={80} value={v.nip_note} />
           </Field>
         </div>
       </>
@@ -631,6 +643,9 @@ export const EventEditView: FC<{
             <Field id={`s-${tt.id}`} label="Ordre">
               <input id={`s-${tt.id}`} name="sort" type="number" value={String(tt.sort)} />
             </Field>
+            <Field id={`t-${tt.id}`} label="Petit texte (facultatif)" hint="Même texte dans toutes les langues">
+              <input id={`t-${tt.id}`} name="note" type="text" maxlength={80} value={tt.note} />
+            </Field>
             <div class="field">
               <label class="check" for={`o-${tt.id}`}>
                 <input id={`o-${tt.id}`} name="online" type="checkbox" value="1" checked={tt.online === 1} />
@@ -666,6 +681,9 @@ export const EventEditView: FC<{
           </Field>
           <Field id="new-q" label="Quota">
             <input id="new-q" name="quota" type="number" min="0" required value="10" />
+          </Field>
+          <Field id="new-t" label="Petit texte (facultatif)">
+            <input id="new-t" name="note" type="text" maxlength={80} />
           </Field>
           <div class="field">
             <label class="check" for="new-o">

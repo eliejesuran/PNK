@@ -26,6 +26,8 @@ INSERT INTO ticket_types (id, event_id, name_fr, name_en, name_nl, price_cents, 
   (4, 2, 'NIP', 'NIP', 'NIP', 2500, 4, 1, 1),
   (5, 3, 'Standard', 'Standard', 'Standard', 1000, 80, 0, 1);
 
+UPDATE ticket_types SET note = 'Not Very Important Person' WHERE name_fr = 'NIP';
+
 -- Commandes payées de démonstration (jours variés pour que le graphique ait du relief)
 INSERT INTO orders (id, token, event_id, status, channel, payment_method, provider, email, name, lang, total_cents, vat_rate_bp, invoice_year, invoice_seq, created_at, paid_at) VALUES
   (1, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'camille@example.com',  'Camille Dupont',  'fr', 3000, 600, CAST(strftime('%Y','now') AS INTEGER), 1, strftime('%Y-%m-%dT%H:%M:%fZ','now','-12 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-12 days')),

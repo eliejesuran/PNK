@@ -179,6 +179,7 @@ export const EventView: FC<
                       <div>
                         <div class="name">{typeName(tt, lang)}</div>
                         <div class="price">{tt.price_cents === 0 ? t(lang, 'event.free') : formatMoney(tt.price_cents, lang, currency)}</div>
+                        {tt.note ? <div class="note">{tt.note}</div> : null}
                         {!out && tt.available <= 10 ? <div class="left">{t(lang, 'event.low', { n: tt.available })}</div> : null}
                       </div>
                       {out ? (
@@ -311,6 +312,7 @@ export const TicketCard: FC<{
           <dt>{t(lang, 'ticket.type')}</dt>
           <dd>
             <b>{typeName(ticket, lang)}</b>
+            {ticket.note ? <span class="muted"> · {ticket.note}</span> : null}
           </dd>
           {holder ? (
             <>

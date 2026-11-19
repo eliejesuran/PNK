@@ -5,9 +5,11 @@ c'est bon. Les 🔴 bloquent la mise en vente réelle, les 🟠 changent le rés
 
 ## 🔴 Bloquantes avant de vendre pour de vrai
 
-1. **« NIP », c'est quoi ?** Tu as écrit « standard et NIP ». VIP ? Invité ? Tarif réduit ? Place « Nom Important / Pro » ?
-   → *Supposé :* une catégorie nommée « NIP », prix et quota propres, vendue en ligne. Le nom est modifiable par concert (FR/EN/NL).
-   Dis-moi le sens exact : je peux ajuster le libellé, les traductions et décider si NIP se vend en ligne ou seulement à la caisse.
+1. ✅ **« NIP » = « Not Very Important Person »** (répondu : clin d'œil punk au VIP). Implémenté : chaque catégorie de places peut avoir un
+   *petit texte* facultatif sous son nom (affiché sur la page d'achat et sur le billet, même texte dans toutes les langues). Il est
+   **pré‑rempli « Not Very Important Person »** pour NIP à la création d'un concert, modifiable ou effaçable. **Reste à confirmer :**
+   NIP est‑il **moins cher ou plus cher** que Standard (ou même prix) ? Les prix proposés par défaut (Standard 15 €, NIP 30 €) ne sont que
+   des exemples à saisir de toute façon. Et NIP se vend‑il en ligne (supposé) ou seulement à la caisse ?
 2. **Qui est l'organisateur légal ?** Raison sociale, forme (ASBL, SRL, asso 1901…), adresse, n° de TVA / d'entreprise, et est-il
    assujetti à la TVA ? Ces infos s'impriment sur les factures (page *Réglages*).
    → *Supposé :* champs vides ; le tableau de bord affiche un bandeau jaune « il reste… » tant que ce n'est pas rempli.

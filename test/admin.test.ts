@@ -114,6 +114,7 @@ describe('gestion des concerts', () => {
     std_price: '12,50',
     nip_quota: '10',
     nip_price: '30',
+    nip_note: 'Not Very Important Person',
     description_fr: 'Du bruit.\nBeaucoup.',
     ...extra,
   });
@@ -125,10 +126,10 @@ describe('gestion des concerts', () => {
     const ev = (await e.DB.prepare('SELECT * FROM events').first<{ id: number; slug: string; status: string; doors_at: string; starts_at: string }>())!;
     expect(ev.slug).toBe('bruit-blanc-les-cafards');
     expect(ev.status).toBe('draft');
-    const types = await e.DB.prepare('SELECT name_fr, price_cents, quota FROM ticket_types ORDER BY sort').all<{ name_fr: string; price_cents: number; quota: number }>();
+    const types = await e.DB.prepare('SELECT name_fr, price_cents, quota, note FROM ticket_types ORDER BY sort').all<{ name_fr: string; price_cents: number; quota: number; note: string }>();
     expect(types.results).toEqual([
-      { name_fr: 'Standard', price_cents: 1250, quota: 100 },
-      { name_fr: 'NIP', price_cents: 3000, quota: 10 },
+      { name_fr: 'Standard', price_cents: 1250, quota: 100, note: '' },
+      { name_fr: 'NIP', price_cents: 3000, quota: 10, note: 'Not Very Important Person' },
     ]);
     expect((await http(`/e/${ev.slug}`)).status).toBe(404); // brouillon : invisible
 
@@ -140,6 +141,40 @@ describe('gestion des concerts', () => {
     expect(page).toContain('Du bruit.');
     expect(Date.parse(ev.doors_at)).toBeLessThan(Date.parse(ev.starts_at));
     expect(await (await http('/')).text()).toContain('/e/bruit-blanc-les-cafards');
+  });
+
+  it('NIP = « Not Very Important Person » : petit texte proposé à la création, modifiable, copié, affiché et échappé', async () => {
+    const venueId = await createVenue();
+    // le formulaire de création propose le texte déjà rempli
+    expect(await (await http('/admin/events/new')).text()).toContain('value="Not Very Important Person"');
+    await http('/admin/events', { form: eventForm(venueId, { slug: 'nip-test' }) });
+    const ev = (await e.DB.prepare("SELECT id FROM events WHERE slug = 'nip-test'").first<{ id: number }>())!;
+    await http(`/admin/events/${ev.id}/status`, { form: { status: 'published' } });
+
+    const page = await (await http('/e/nip-test')).text();
+    expect(page).toContain('<div class="note">Not Very Important Person</div>');
+
+    // billet : la note suit la catégorie
+    const nip = (await e.DB.prepare("SELECT id FROM ticket_types WHERE name_fr = 'NIP'").first<{ id: number }>())!.id;
+    await http('/admin/door', { form: { type_id: String(nip), qty: '1', mode: 'guest', name: 'Zoé' } });
+    const token = (await e.DB.prepare('SELECT token FROM orders').first<{ token: string }>())!.token;
+    expect(await (await http(`/o/${token}`)).text()).toContain('Not Very Important Person');
+
+    // modification + XSS + limite de 80 caractères
+    await http(`/admin/types/${nip}`, { form: { name_fr: 'NIP', price: '30', quota: '10', online: '1', note: `<img src=x onerror=alert(1)>${'x'.repeat(200)}` } });
+    const saved = (await e.DB.prepare('SELECT note FROM ticket_types WHERE id = ?1').bind(nip).first<{ note: string }>())!.note;
+    expect(saved.length).toBe(80);
+    const html = await (await http('/e/nip-test')).text();
+    expect(html).not.toContain('<img src=x');
+    expect(html).toContain('&lt;img src=x');
+
+    // la copie d'un concert garde les petits textes ; on peut aussi les effacer
+    await http(`/admin/types/${nip}`, { form: { name_fr: 'NIP', price: '30', quota: '10', online: '1', note: 'Pas très important' } });
+    await http(`/admin/events/${ev.id}/duplicate`, { method: 'POST' });
+    const copied = await e.DB.prepare("SELECT note FROM ticket_types WHERE name_fr = 'NIP' AND event_id != ?1").bind(ev.id).first<{ note: string }>();
+    expect(copied?.note).toBe('Pas très important');
+    await http(`/admin/types/${nip}`, { form: { name_fr: 'NIP', price: '30', quota: '10', online: '1', note: '' } });
+    expect(await (await http('/e/nip-test')).text()).not.toContain('class="note"');
   });
 
   it('valide les saisies : capacité, dates, TVA, URL, doublon de slug', async () => {

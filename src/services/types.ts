@@ -53,6 +53,8 @@ export interface TicketType {
   quota: number;
   sort: number;
   online: number;
+  /** Petit texte facultatif affiché sous le nom (identique dans toutes les langues). */
+  note: string;
   created_at: string;
 }
 
@@ -127,6 +129,7 @@ export interface TicketWithType extends TicketRow {
   name_fr: string;
   name_en: string;
   name_nl: string;
+  note: string;
 }
 
 export function typeName(t: { name_fr: string; name_en: string; name_nl: string }, lang: Lang): string {
