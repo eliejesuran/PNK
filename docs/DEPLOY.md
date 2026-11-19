@@ -44,6 +44,20 @@ npx wrangler secret put STRIPE_WEBHOOK_SECRET -c wrangler.local.jsonc  # whsec_�
 # facultatifs : TURNSTILE_SECRET (+ TURNSTILE_SITE_KEY en var), RESEND_API_KEY
 ```
 
+## 3 bis. Sans nom de domaine : test privé sur `*.workers.dev`
+Avant d'avoir un domaine, on peut déjà tout tester sur l'adresse `https://pnk.<ton-sous-domaine>.workers.dev` (la première fois, `wrangler deploy`
+te demande de choisir ce sous-domaine). La protection se fait alors **au niveau du Worker** :
+1. Cloudflare → *Zero Trust* (première fois : choisir un nom d'équipe et l'offre gratuite) ;
+2. *Workers & Pages* → ton Worker `pnk` → onglet **Access** → *Protect this Worker behind Access* → **All traffic** → une politique
+   (membres du compte Cloudflare, ou des emails) → *Apply Access* ;
+3. Noter le **domaine d'équipe** (`xxxx.cloudflareaccess.com`) et l'**AUD tag** de l'application Access créée (ou affichés dans la fenêtre d'activation),
+   les mettre dans `ACCESS_TEAM_DOMAIN` et `ACCESS_AUD` de `wrangler.local.jsonc`, puis `npm run deploy`.
+
+**Limites de ce mode (test privé uniquement)** : Access protège **tout** le site, public compris (il faut être connecté pour voir les concerts) ;
+et **les webhooks Stripe sont bloqués** (Stripe ne peut pas se connecter à Access). Les achats d'essai fonctionnent quand même, grâce à la
+vérification faite au retour de l'acheteur (page de commande), mais pas le renvoi automatique des paiements différés. Pour ouvrir au public :
+un nom de domaine, puis l'application Access limitée à `/admin*`, `/scan*`, `/api/*` (§4).
+
 ## 4. Cloudflare Access (la porte du back-office) — **obligatoire**
 Sans ça, `/admin`, `/scan` et `/api/*` répondent **503** (le Worker refuse par sécurité).
 1. Zero Trust → Access → Applications → *Add an application* → **Self-hosted**.

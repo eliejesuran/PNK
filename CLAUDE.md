@@ -96,6 +96,8 @@ Site statique cliquable : https://eliejesuran.github.io/PNK/ — branche `gh-pag
 - [x] 3 langues publiques, style punk, responsive (vérifié en mobile 375 px).
 - [x] 123 tests verts ; `tsc` strict propre.
 
+**État du déploiement de test (workers.dev)** : Worker, base D1 (EU), migrations, configuration de l'organisation et secrets (`HASH_SECRET`, `BOOTSTRAP_OWNERS`) sont en place sur le compte du propriétaire ; le site public répond, `/admin` et `/scan` répondent 503 tant qu'Access n'est pas configuré (échoue fermé, voulu). Reste : Access (voir `docs/DEPLOY.md` §3 bis), Stripe (test), domaine + emails.
+
 **Pas vérifié en réel (aucun accès aux comptes)** — à faire au déploiement, voir `docs/DEPLOY.md` §Recette :
 - [ ] Vrai paiement Stripe (mode test) + webhook, Apple Pay / Google Pay / Bancontact.
 - [ ] Vrai JWT Cloudflare Access (seul le rejet des faux a été testé).
