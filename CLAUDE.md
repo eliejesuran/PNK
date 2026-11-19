@@ -109,7 +109,7 @@ Site statique cliquable : https://eliejesuran.github.io/PNK/ — branche `gh-pag
 - [ ] Mode scanner hors-ligne (liste de codes en cache) si le réseau de la salle est mauvais.
 - [ ] Pages légales (CGV, confidentialité) : le lien CGV est un réglage, le texte reste à fournir par la salle.
 
-**Bloqué en attente du propriétaire** : voir `docs/QUESTIONS.md` — code postal du siège + mention de facture à TVA 0 %, compte Stripe (de l'ASBL), nom de domaine (non urgent pour tester, requis avant la vente), connexion `wrangler login`, textes légaux, email d'expédition. Déjà répondu : NIP, identité de l'organisateur (nom, siège, n° d'entreprise, email), TVA 0 % (modifiable), Belgique, premier propriétaire.
+**Bloqué en attente du propriétaire** : voir `docs/QUESTIONS.md` — mention de facture à TVA 0 %, compte Stripe (de l'ASBL), nom de domaine (non urgent pour tester, requis avant la vente), connexion `wrangler login`, textes légaux, email d'expédition. Déjà répondu : NIP, identité de l'organisateur (nom, siège, n° d'entreprise, email), TVA 0 % (modifiable), Belgique, premier propriétaire.
 
 ## Déroulé de travail attendu
 1. `npm run check` avant chaque commit. Messages de commit en français, concis, à l'impératif ; terminer par la ligne de co-auteur demandée.

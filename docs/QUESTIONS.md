@@ -15,8 +15,8 @@ c'est bon. Les 🔴 bloquent la mise en vente réelle, les 🟠 changent le rés
 
 ## 🔴 Encore bloquantes avant de vendre pour de vrai
 
-1. ✅ **Numéro d'entreprise, email de contact et siège** : renseignés. **Reste :** le **code postal** du siège, et confirmer la dénomination exacte sur les factures
-   (j'ai ajouté « ASBL » à la fin du nom). Un champ « n° d'entreprise (BCE) » distinct du n° de TVA a été ajouté : une organisation non assujettie n'a pas de n° de TVA.
+1. ✅ **Numéro d'entreprise, email de contact, siège et code postal** : renseignés. Reste à confirmer la dénomination exacte sur les factures
+   (j'ai ajouté « ASBL » à la fin du nom). Un champ « n° d'entreprise (BCE) » distinct du n° de TVA existe : une organisation non assujettie n'a pas de n° de TVA.
 2. **TVA à 0 % : quelle mention sur la facture ?** Si l'ASBL n'est pas assujettie, une mention du type « TVA non applicable » est en général
    requise — **à faire valider par le comptable** ; il y a un champ « mentions de pied de facture » dans *Réglages* pour l'écrire.
 3. **Compte Stripe** (le prestataire qui encaisse les paiements) : à créer par un représentant de l'ASBL — voir « Qu'est-ce que Stripe ? » plus bas.
