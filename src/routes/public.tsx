@@ -8,9 +8,9 @@ import { isLang, t } from '../i18n';
 import { isOrderToken } from '../lib/ids';
 import { qrPng } from '../lib/qr';
 import { baseUrlOf, ipHash, verifyTurnstile } from '../lib/security';
-import { clampInt, clean, isEmail } from '../lib/text';
+import { clampInt, clean, cleanMultiline, isEmail } from '../lib/text';
 import { viewCtx } from '../ctx';
-import { getEventById, getEventBySlug, listPublicEvents, salesState, ticketTypesWithStock } from '../services/events';
+import { getEventById, getEventBySlug, homeAvailability, listPublicEvents, salesState, ticketTypesWithStock } from '../services/events';
 import {
   cancelOrder,
   createOrder,
@@ -43,14 +43,8 @@ publicRoutes.get('/healthz', (c) => c.json({ ok: true }));
 publicRoutes.get('/', async (c) => {
   const now = new Date().toISOString();
   const events = await listPublicEvents(c.env.DB, now);
-  const items: HomeEvent[] = await Promise.all(
-    events.map(async (event) => {
-      const types = (await ticketTypesWithStock(c.env.DB, event.id, now)).filter((x) => x.online === 1);
-      const soldOut = types.length > 0 && types.every((x) => x.available <= 0);
-      const prices = types.filter((x) => x.available > 0).map((x) => x.price_cents);
-      return { event, soldOut, minPriceCents: prices.length ? Math.min(...prices) : null };
-    }),
-  );
+  const stock = await homeAvailability(c.env.DB, now);
+  const items: HomeEvent[] = events.map((event) => ({ event, ...(stock.get(event.id) ?? { soldOut: false, minPriceCents: null }) }));
   return c.html(<HomeView {...viewCtx(c)} events={items} currency={c.get('settings').currency} />);
 });
 
@@ -113,7 +107,7 @@ publicRoutes.post('/e/:slug/checkout', async (c) => {
     email: clean(str('email'), 254).toLowerCase(),
     billing_name: clean(str('billing_name'), 120),
     billing_vat: clean(str('billing_vat'), 40),
-    billing_address: clean(str('billing_address'), 300),
+    billing_address: cleanMultiline(str('billing_address'), 300),
     terms: str('terms') === '1',
     qty: {},
   };
@@ -130,6 +124,11 @@ publicRoutes.post('/e/:slug/checkout', async (c) => {
 
   if (salesState(event, now) !== 'open') return fail('err.closed');
   if (lines.every((l) => l.qty === 0)) return fail('err.pick');
+  // Le prix affiché à l'écran doit être le prix débité : si un tarif a changé entre l'ouverture de la page et la validation, on redemande.
+  for (const x of types) {
+    const shown = str(`price_${x.id}`);
+    if (x.online === 1 && values.qty[x.id] && shown !== '' && Number(shown) !== x.price_cents) return fail('err.price_changed', undefined, 409);
+  }
   if (!values.name) return fail('err.name');
   if (!isEmail(values.email)) return fail('err.email');
   if (!values.terms) return fail('err.terms');

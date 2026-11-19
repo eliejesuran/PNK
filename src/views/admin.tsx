@@ -32,7 +32,7 @@ export interface A {
 const eur = (a: A, cents: number) => formatMoney(cents, 'fr', a.currency);
 const dt = (a: A, iso: string | null | undefined) => (iso ? formatDateTime(iso, 'fr', a.tz) : '—');
 
-const Shell: FC<PropsWithChildren<{ a: A; title: string }>> = ({ a, title, children }) => (
+export const Shell: FC<PropsWithChildren<{ a: A; title: string }>> = ({ a, title, children }) => (
   <AdminPage title={title} staff={a.staff} path={a.path} orgName={a.orgName} flash={a.flash}>
     {children}
   </AdminPage>

@@ -35,6 +35,30 @@ export async function listPublicEvents(db: D1Database, nowIso: string): Promise<
   return results;
 }
 
+/** Stock agrégé des concerts de l'accueil en UNE requête (évite une requête par concert). */
+export async function homeAvailability(db: D1Database, nowIso: string): Promise<Map<number, { soldOut: boolean; minPriceCents: number | null }>> {
+  const cutoff = new Date(Date.parse(nowIso) - 6 * 3600_000).toISOString();
+  const { results } = await db
+    .prepare(
+      `SELECT tt.event_id, tt.price_cents, MAX(0, tt.quota - ${takenSql('tt.id', '?1')}) AS available
+       FROM ticket_types tt
+       WHERE tt.online = 1 AND tt.event_id IN (SELECT id FROM events WHERE status IN ('published', 'cancelled') AND starts_at >= ?2)`,
+    )
+    .bind(nowIso, cutoff)
+    .all<{ event_id: number; price_cents: number; available: number }>();
+  const out = new Map<number, { soldOut: boolean; minPriceCents: number | null; any: boolean }>();
+  for (const r of results) {
+    const e = out.get(r.event_id) ?? { soldOut: true, minPriceCents: null, any: false };
+    e.any = true;
+    if (r.available > 0) {
+      e.soldOut = false;
+      e.minPriceCents = e.minPriceCents === null ? r.price_cents : Math.min(e.minPriceCents, r.price_cents);
+    }
+    out.set(r.event_id, e);
+  }
+  return new Map([...out].map(([k, v]) => [k, { soldOut: v.any && v.soldOut, minPriceCents: v.minPriceCents }]));
+}
+
 export async function listAllEvents(db: D1Database): Promise<EventWithVenue[]> {
   const { results } = await db.prepare(`${EVENT_WITH_VENUE} ORDER BY e.starts_at DESC`).all<EventWithVenue>();
   return results;

@@ -2,6 +2,7 @@
 // Back-office (2/2) : commandes, caisse / invités, rapports et exports, réglages, équipe, journal, scanner.
 
 import { Hono } from 'hono';
+import { str, type Body } from '../lib/form';
 import type { AppEnv, Role } from '../env';
 import { hasRole } from '../lib/auth';
 import { formatTicketCode, normalizeTicketCode } from '../lib/ids';
@@ -29,8 +30,6 @@ import { adminCtx, back } from './admin';
 
 export const opsRoutes = new Hono<AppEnv>();
 
-type Body = Record<string, string | File | (string | File)[]>;
-const str = (b: Body, k: string): string => (typeof b[k] === 'string' ? (b[k] as string) : '');
 const ROLES: Role[] = ['owner', 'manager', 'scanner'];
 
 const eventOptions = async (db: D1Database) => (await listAllEvents(db)).map((e) => ({ id: e.id, title: e.title, starts_at: e.starts_at }));
@@ -123,15 +122,19 @@ opsRoutes.post('/admin/orders/:id/refund', async (c) => {
 
 // ---------- Caisse / invités ----------
 
-opsRoutes.get('/admin/door', async (c) => {
-  const db = c.env.DB;
+/** Concerts publiés à venir (ou commencés depuis moins de 12 h) et leurs catégories avec stock : page « Caisse / invités ». */
+async function doorChoices(db: D1Database) {
   const now = new Date().toISOString();
-  const cutoff = new Date(Date.now() - 12 * 3600_000).toISOString();
   const { results: events } = await db
     .prepare("SELECT id, title, starts_at FROM events WHERE status = 'published' AND starts_at >= ?1 ORDER BY starts_at")
-    .bind(cutoff)
+    .bind(new Date(Date.now() - 12 * 3600_000).toISOString())
     .all<{ id: number; title: string; starts_at: string }>();
   const types = (await Promise.all(events.map(async (e) => (await ticketTypesWithStock(db, e.id, now)).map((t) => ({ ...t, event_title: e.title }))))).flat();
+  return { events, types };
+}
+
+opsRoutes.get('/admin/door', async (c) => {
+  const { events, types } = await doorChoices(c.env.DB);
   return c.html(<DoorView a={adminCtx(c)} events={events} types={types} errors={[]} />);
 });
 
@@ -148,12 +151,7 @@ opsRoutes.post('/admin/door', async (c) => {
   const email = clean(str(body, 'email'), 254).toLowerCase();
 
   const fail = async (msg: string, status: 400 | 409 = 400) => {
-    const now = new Date().toISOString();
-    const { results: events } = await db
-      .prepare("SELECT id, title, starts_at FROM events WHERE status = 'published' AND starts_at >= ?1 ORDER BY starts_at")
-      .bind(new Date(Date.now() - 12 * 3600_000).toISOString())
-      .all<{ id: number; title: string; starts_at: string }>();
-    const types = (await Promise.all(events.map(async (e) => (await ticketTypesWithStock(db, e.id, now)).map((t) => ({ ...t, event_title: e.title }))))).flat();
+    const { events, types } = await doorChoices(db);
     return c.html(<DoorView a={adminCtx(c)} events={events} types={types} errors={[msg]} />, status);
   };
 

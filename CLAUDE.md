@@ -94,7 +94,7 @@ Site statique cliquable : https://eliejesuran.github.io/PNK/ — branche `gh-pag
 - [x] Scanner d'entrée (caméra BarcodeDetector/jsQR + saisie manuelle, anti double passage atomique, compteur).
 - [x] Sécurité : Cloudflare Access (JWT RS256) + rôles, CSP, CSRF, anti-abus (limiteur + Turnstile optionnel), audit.
 - [x] 3 langues publiques, style punk, responsive (vérifié en mobile 375 px).
-- [x] 123 tests verts ; `tsc` strict propre.
+- [x] 131 tests verts ; `tsc` strict propre.
 
 **État du déploiement de test (workers.dev)** : Worker, base D1 (EU), migrations, configuration de l'organisation et secrets (`HASH_SECRET`, `BOOTSTRAP_OWNERS`) sont en place sur le compte du propriétaire ; le site public répond, `/admin` et `/scan` répondent 503 tant qu'Access n'est pas configuré (échoue fermé, voulu). Reste : Access (voir `docs/DEPLOY.md` §3 bis), Stripe (test), domaine + emails.
 

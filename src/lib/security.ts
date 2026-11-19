@@ -72,7 +72,7 @@ export function baseUrlOf(env: Env, req: Request): string {
 
 /** Vérifie un jeton Turnstile. Si Turnstile n'est pas configuré, la vérification est ignorée. */
 export async function verifyTurnstile(env: Env, token: string | null, ip: string | null): Promise<boolean> {
-  if (!env.TURNSTILE_SECRET) return true;
+  if (!env.TURNSTILE_SECRET || !env.TURNSTILE_SITE_KEY) return true; // widget absent sans les deux clés : ne pas exiger de jeton
   if (!token) return false;
   try {
     const body = new URLSearchParams({ secret: env.TURNSTILE_SECRET, response: token });

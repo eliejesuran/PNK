@@ -45,6 +45,7 @@ export const fr = {
   'event.free_confirm': 'Réserver',
 
   'err.pick': 'Choisis au moins un billet.',
+  'err.price_changed': 'Les prix ont changé depuis que tu as ouvert la page. Vérifie le total et valide à nouveau.',
   'err.name': 'Indique ton nom.',
   'err.email': 'Cet email ne ressemble pas à un email.',
   'err.terms': 'Il faut accepter les conditions de vente.',

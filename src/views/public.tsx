@@ -186,6 +186,7 @@ export const EventView: FC<
                         <span class="sticker">{t(lang, 'event.soldout')}</span>
                       ) : (
                         <div class="stepper">
+                          <input type="hidden" name={`price_${tt.id}`} value={String(tt.price_cents)} />
                           <button type="button" data-step="-1" data-for={id} aria-label={`− ${typeName(tt, lang)}`}>
                             −
                           </button>

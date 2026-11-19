@@ -3,6 +3,7 @@
 // Toutes ces routes exigent au minimum le rôle "manager" (voir src/index.tsx).
 
 import { Hono, type Context } from 'hono';
+import { str, type Body } from '../lib/form';
 import type { AppEnv } from '../env';
 import { envGaps } from '../lib/auth';
 import { setFlash, takeFlash } from '../lib/flash';
@@ -30,8 +31,6 @@ import {
 
 export const adminRoutes = new Hono<AppEnv>();
 
-type Body = Record<string, string | File | (string | File)[]>;
-const str = (b: Body, k: string): string => (typeof b[k] === 'string' ? (b[k] as string) : '');
 
 export function adminCtx(c: Context<AppEnv>): A {
   const s = c.get('settings');

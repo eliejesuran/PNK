@@ -174,7 +174,7 @@ describe('achat avec Stripe (API simulée) via le site', () => {
   });
 
   it('remboursement refusé par Stripe : la commande reste payée, les billets restent valides', async () => {
-    const f = useStripe((c) => (c.url.endsWith('/refunds') ? json({ error: { message: 'charge_already_refunded' } }, 400) : stripeOk(c)));
+    const f = useStripe((c) => (c.url.endsWith('/refunds') ? json({ error: { message: 'insufficient_funds' } }, 400) : stripeOk(c)));
     const s = await seedEvent();
     await http(`/e/${s.slug}/checkout`, { form: formBody(s) });
     const token = (await e.DB.prepare('SELECT token FROM orders').first<{ token: string }>())!.token;
@@ -182,10 +182,22 @@ describe('achat avec Stripe (API simulée) via le site', () => {
     const order = (await e.DB.prepare('SELECT * FROM orders').first<OrderRow>())!;
     const r = await refundOrder(e, order, 'owner@pnk.test');
     expect(r).toMatchObject({ ok: false });
-    expect((r as { error: string }).error).toContain('charge_already_refunded');
+    expect((r as { error: string }).error).toContain('insufficient_funds');
     expect((await e.DB.prepare('SELECT status FROM orders').first<{ status: string }>())!.status).toBe('paid');
     expect(await count("SELECT COUNT(*) AS n FROM tickets WHERE status = 'valid'")).toBe(2);
     expect(f.calls.length).toBeGreaterThan(0);
+  });
+
+  it('remboursement déjà fait chez Stripe : la commande est quand même marquée remboursée et les billets annulés', async () => {
+    useStripe((c) => (c.url.endsWith('/refunds') ? json({ error: { code: 'charge_already_refunded', message: 'Charge ch_1 has already been refunded.' } }, 400) : stripeOk(c)));
+    const s = await seedEvent();
+    await http(`/e/${s.slug}/checkout`, { form: formBody(s) });
+    const token = (await e.DB.prepare('SELECT token FROM orders').first<{ token: string }>())!.token;
+    await http(`/o/${token}`);
+    const order = (await e.DB.prepare('SELECT * FROM orders').first<OrderRow>())!;
+    expect((await refundOrder(e, order, 'owner@pnk.test')).ok).toBe(true);
+    expect((await e.DB.prepare('SELECT status FROM orders').first<{ status: string }>())!.status).toBe('refunded');
+    expect(await count("SELECT COUNT(*) AS n FROM tickets WHERE status = 'void'")).toBe(2);
   });
 
   it('sans clé Stripe : le paiement est refusé proprement (échoue fermé)', async () => {

@@ -15,6 +15,7 @@ export function slugify(input: string): string {
 /** Texte brut d'un champ de formulaire : trim, retire les caractères de contrôle, borne la longueur. */
 export function clean(input: unknown, max = 200): string {
   return String(input ?? '')
+    .replace(/[\r\n\t]+/g, ' ')
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
     .trim()
     .slice(0, max);

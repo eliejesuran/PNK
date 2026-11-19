@@ -1,19 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Vues du back-office (suite) : réglages, équipe, journal d'audit, scanner d'entrée.
 
-import type { FC, PropsWithChildren } from 'hono/jsx';
+import type { FC } from 'hono/jsx';
 import type { Role } from '../env';
 import { ROLE_LABEL } from '../lib/auth';
 import { formatDateTime } from '../lib/time';
 import type { Settings } from '../services/settings';
-import { Field, type A } from './admin';
-import { AdminPage, DOCTYPE, Logo } from './layout';
-
-const Shell: FC<PropsWithChildren<{ a: A; title: string }>> = ({ a, title, children }) => (
-  <AdminPage title={title} staff={a.staff} path={a.path} orgName={a.orgName} flash={a.flash}>
-    {children}
-  </AdminPage>
-);
+import { Field, Shell, type A } from './admin';
+import { DOCTYPE, Logo } from './layout';
 
 // ---------- Réglages ----------
 

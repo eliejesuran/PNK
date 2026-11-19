@@ -45,6 +45,7 @@ export const en: Dict = {
   'event.free_confirm': 'Reserve',
 
   'err.pick': 'Pick at least one ticket.',
+  'err.price_changed': 'Prices changed since you opened the page. Check the total and submit again.',
   'err.name': 'Enter your name.',
   'err.email': 'That does not look like an email address.',
   'err.terms': 'You must accept the terms of sale.',

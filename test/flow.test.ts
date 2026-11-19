@@ -234,6 +234,60 @@ describe('achat', () => {
   });
 });
 
+describe('revue de code : régressions', () => {
+  it('le prix affiché doit être le prix débité : un tarif modifié entre-temps redemande confirmation', async () => {
+    const s = await seedEvent();
+    expect(await (await http(`/e/${s.slug}`)).text()).toContain(`name="price_${s.standardId}" value="1500"`);
+    await e.DB.prepare('UPDATE ticket_types SET price_cents = 1800 WHERE id = ?1').bind(s.standardId).run();
+    const stale = await checkout(s, { [`price_${s.standardId}`]: '1500' });
+    expect(stale.status).toBe(409);
+    expect(await stale.text()).toContain('Les prix ont changé');
+    expect(await count('SELECT COUNT(*) AS n FROM orders')).toBe(0);
+    expect((await checkout(s, { [`price_${s.standardId}`]: '1800' })).status).toBe(303); // prix à jour : ça passe
+  });
+
+  it('accueil : « Complet » et prix minimum calculés par une requête groupée', async () => {
+    const full = await seedEvent({ slug: 'complet', standardQuota: 1, nipQuota: 0 });
+    await placeOrder(full, { [`qty_${full.standardId}`]: '1' });
+    await seedEvent({ slug: 'dispo', standardCents: 1200, nipCents: 3000 });
+    const html = await (await http('/')).text();
+    const cards = html.split('<li class="poster').slice(1); // une entrée par concert
+    const card = (slug: string) => cards.find((c) => c.includes(`/e/${slug}"`)) ?? '';
+    expect(html).toContain('/e/complet');
+    expect(card('complet')).toContain('Complet');
+    expect(card('dispo')).not.toContain('Complet');
+    expect(card('dispo')).toMatch(/12,00/);
+  });
+
+  it('Turnstile : ignoré tant que les DEUX clés ne sont pas posées (sinon plus personne ne peut acheter)', async () => {
+    const mut = e as unknown as { TURNSTILE_SECRET?: string; TURNSTILE_SITE_KEY?: string };
+    const s = await seedEvent({ standardQuota: 20 });
+    try {
+      mut.TURNSTILE_SECRET = 'secret-seul';
+      expect((await checkout(s)).status).toBe(303); // pas de clé publique : pas de widget, pas de contrôle
+      mut.TURNSTILE_SITE_KEY = 'site';
+      const blocked = await checkout(s); // les deux clés : le jeton devient obligatoire
+      expect(blocked.status).toBe(400);
+      expect(await blocked.text()).toContain('anti-robot');
+    } finally {
+      delete mut.TURNSTILE_SECRET;
+      delete mut.TURNSTILE_SITE_KEY;
+    }
+  });
+
+  it('un nom avec retours à la ligne est aplati (pas de saut de ligne dans les emails)', async () => {
+    const s = await seedEvent();
+    const token = await placeOrder(s, { name: 'Jean\r\nBcc: x@y.zz' });
+    expect((await orderByToken(token))!.name).toBe('Jean Bcc: x@y.zz');
+  });
+
+  it('adresse de facturation multi-lignes conservée', async () => {
+    const s = await seedEvent();
+    const token = await placeOrder(s, { billing_name: 'ACME', billing_address: '1 rue X\n1000 Bruxelles' });
+    expect((await orderByToken(token))!.billing_address).toBe('1 rue X\n1000 Bruxelles');
+  });
+});
+
 describe('stock : jamais de survente', () => {
   it('refuse quand il ne reste pas assez de places (réservations comprises)', async () => {
     const s = await seedEvent({ standardQuota: 3 });

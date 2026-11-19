@@ -45,6 +45,7 @@ export const nl: Dict = {
   'event.free_confirm': 'Reserveren',
 
   'err.pick': 'Kies minstens één ticket.',
+  'err.price_changed': 'De prijzen zijn gewijzigd sinds je de pagina opende. Controleer het totaal en bevestig opnieuw.',
   'err.name': 'Vul je naam in.',
   'err.email': 'Dit lijkt geen geldig e-mailadres.',
   'err.terms': 'Je moet de verkoopsvoorwaarden aanvaarden.',

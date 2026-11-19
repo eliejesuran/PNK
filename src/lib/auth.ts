@@ -72,9 +72,14 @@ export async function resolveStaff(env: Env, email: string, nowIso: string): Pro
       .run();
     return row;
   }
+  // Amorçage : seulement tant qu'il n'existe AUCUN propriétaire. Sinon un propriétaire d'amorçage retiré de l'équipe
+  // serait recréé « owner » à sa prochaine requête et ne pourrait plus jamais être révoqué.
   if (bootstrapOwners(env).has(email)) {
-    await env.DB.prepare("INSERT OR IGNORE INTO staff (email, role, last_seen_at) VALUES (?1, 'owner', ?2)").bind(email, nowIso).run();
-    return { email, role: 'owner' };
+    const hasOwner = await env.DB.prepare("SELECT 1 AS x FROM staff WHERE role = 'owner' LIMIT 1").first();
+    if (!hasOwner) {
+      await env.DB.prepare("INSERT OR IGNORE INTO staff (email, role, last_seen_at) VALUES (?1, 'owner', ?2)").bind(email, nowIso).run();
+      return { email, role: 'owner' };
+    }
   }
   return null;
 }
@@ -90,10 +95,10 @@ export function envGaps(env: Env): string[] {
       if (!env.STRIPE_WEBHOOK_SECRET) gaps.push('Secret du webhook Stripe (STRIPE_WEBHOOK_SECRET)');
     } else gaps.push('PAYMENT_PROVIDER doit valoir "stripe" en production');
     if (!env.HASH_SECRET) gaps.push('HASH_SECRET (anti-abus)');
-    if (!env.BASE_URL || env.BASE_URL.includes('example.org')) gaps.push('BASE_URL (URL publique de la billetterie)');
+    if (env.BASE_URL?.includes('example.org')) gaps.push('BASE_URL (valeur d’exemple : mets l’URL publique, ou laisse vide pour utiliser l’adresse de la requête)');
     if (!env.MAIL_FROM || env.MAIL_FROM.includes('example.org')) gaps.push('MAIL_FROM (adresse d’expédition des emails)');
     if ((env.MAIL_DRIVER ?? 'cloudflare') === 'resend' && !env.RESEND_API_KEY) gaps.push('RESEND_API_KEY');
-    if (!env.TURNSTILE_SECRET || !env.TURNSTILE_SITE_KEY) gaps.push('Turnstile (anti-robots, recommandé) : TURNSTILE_SITE_KEY et TURNSTILE_SECRET');
+    if (!env.TURNSTILE_SECRET || !env.TURNSTILE_SITE_KEY) gaps.push(env.TURNSTILE_SECRET || env.TURNSTILE_SITE_KEY ? 'Turnstile à moitié configuré : il faut TURNSTILE_SITE_KEY ET TURNSTILE_SECRET (sinon il est ignoré)' : 'Turnstile (anti-robots, recommandé) : TURNSTILE_SITE_KEY et TURNSTILE_SECRET');
   }
   return gaps;
 }

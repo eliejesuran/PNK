@@ -552,6 +552,16 @@ describe('réglages et équipe', () => {
     expect(await count("SELECT COUNT(*) AS n FROM audit_log WHERE action LIKE 'staff.%'")).toBeGreaterThanOrEqual(4);
   });
 
+  it('un propriétaire d’amorçage retiré de l’équipe n’est pas recréé à sa prochaine visite', async () => {
+    await http('/admin'); // owner@pnk.test devient owner (aucun propriétaire n'existait encore)
+    await http('/admin/staff', { form: { email: 'autre@pnk.test', role: 'owner' } });
+    await loginAs('autre@pnk.test');
+    expect((await http('/admin/staff/delete', { form: { email: 'owner@pnk.test' } })).status).toBe(303);
+    await loginAs('owner@pnk.test');
+    expect((await http('/admin')).status).toBe(403);
+    expect(await count("SELECT COUNT(*) AS n FROM staff WHERE email = 'owner@pnk.test'")).toBe(0);
+  });
+
   it('le journal est lisible par le propriétaire', async () => {
     const s = await seedEvent();
     await http(`/admin/events/${s.eventId}/status`, { form: { status: 'cancelled' } });

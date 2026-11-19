@@ -5,7 +5,7 @@ import { fr } from '../src/i18n/fr';
 import { formatTicketCode, newOrderToken, newTicketCode, normalizeTicketCode, qrPayload, timingSafeEqual } from '../src/lib/ids';
 import { centsToInput, formatRate, parseEuroToCents, parseRatePercentToBp, splitVat } from '../src/lib/money';
 import { qrMatrix, qrPng, qrSvgPath } from '../src/lib/qr';
-import { clampInt, csvCell, isEmail, parseMailbox, slugify, toCsv, cleanHttpUrl } from '../src/lib/text';
+import { clampInt, clean, cleanMultiline, csvCell, isEmail, parseMailbox, slugify, toCsv, cleanHttpUrl } from '../src/lib/text';
 import { dayKey, localInputToUtcIso, utcIsoToLocalInput } from '../src/lib/time';
 import { formEncode, verifyStripeSignature } from '../src/services/payments/stripe';
 import { hmacHex } from '../src/lib/ids';
@@ -143,6 +143,10 @@ describe('texte', () => {
     expect(cleanHttpUrl('javascript:alert(1)')).toBe('');
     expect(cleanHttpUrl('data:text/html,hi')).toBe('');
     expect(cleanHttpUrl('')).toBe('');
+  });
+  it('clean aplatit retours à la ligne et tabulations ; cleanMultiline les garde', () => {
+    expect(clean('Jean\r\nBcc: x\t!')).toBe('Jean Bcc: x !');
+    expect(cleanMultiline('1 rue X\r\n1000 Bruxelles')).toBe('1 rue X\n1000 Bruxelles');
   });
   it('clampInt', () => {
     expect(clampInt('5', 0, 10, 1)).toBe(5);

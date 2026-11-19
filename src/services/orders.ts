@@ -216,7 +216,8 @@ export async function startCheckout(
       lines,
       currency: order.currency,
       baseUrl,
-      expiresAtUnix: Math.floor(Date.parse(addMinutesIso(order.created_at, STRIPE_SESSION_MINUTES)) / 1000),
+      // depuis « maintenant » (et non created_at) : Stripe exige ≥ 30 min dans le futur, même si la création de session a tardé
+      expiresAtUnix: Math.floor(Date.now() / 1000) + STRIPE_SESSION_MINUTES * 60,
       description: `PNK #${order.id} — ${event.title}`.slice(0, 250),
     });
     await env.DB.prepare('UPDATE orders SET provider = ?2, provider_session_id = ?3, checkout_url = ?4 WHERE id = ?1')
@@ -305,10 +306,12 @@ export async function fulfillOrder(env: Env, orderId: number, opts: FulfillOpts)
     .bind(orderId)
     .all<{ ticket_type_id: number; qty: number }>();
 
+  // Tous les billets en UNE instruction (json_each) : atomique, et une seule requête D1 même pour 100 places.
+  // La garde NOT EXISTS (évaluée avant les insertions) + paid_at identique empêchent toute émission en double.
   const ticketSql = `INSERT INTO tickets (code, order_id, event_id, ticket_type_id)
-    SELECT ?1, ?2, ?3, ?4
-    WHERE EXISTS (SELECT 1 FROM orders WHERE id = ?2 AND status = 'paid' AND paid_at = ?5)
-      AND (SELECT COUNT(*) FROM tickets WHERE order_id = ?2) < (SELECT COALESCE(SUM(qty), 0) FROM order_items WHERE order_id = ?2)`;
+    SELECT json_extract(j.value, '$[0]'), ?2, ?3, json_extract(j.value, '$[1]') FROM json_each(?1) j
+    WHERE EXISTS (SELECT 1 FROM orders WHERE id = ?2 AND status = 'paid' AND paid_at = ?4)
+      AND NOT EXISTS (SELECT 1 FROM tickets WHERE order_id = ?2)`;
   const stmts: D1PreparedStatement[] = [
     db
       .prepare(
@@ -321,11 +324,9 @@ export async function fulfillOrder(env: Env, orderId: number, opts: FulfillOpts)
       )
       .bind(orderId, nowStr, opts.providerPaymentId ?? null, year),
   ];
-  for (const it of items) {
-    for (let n = 0; n < it.qty; n++) {
-      stmts.push(db.prepare(ticketSql).bind(newTicketCode(), orderId, order.event_id, it.ticket_type_id, nowStr));
-    }
-  }
+  const codes: [string, number][] = [];
+  for (const it of items) for (let n = 0; n < it.qty; n++) codes.push([newTicketCode(), it.ticket_type_id]);
+  if (codes.length) stmts.push(db.prepare(ticketSql).bind(JSON.stringify(codes), orderId, order.event_id, nowStr));
   const res = await db.batch(stmts);
   const justPaid = res[0]!.meta.changes === 1;
   order = (await getOrderById(db, orderId))!;
@@ -399,7 +400,10 @@ export async function refundOrder(env: Env, order: OrderRow, actor: string, opts
     try {
       await provider.refund(order.provider_payment_id, `pnk-refund-${order.id}`);
     } catch (e) {
-      return { ok: false, error: `Le fournisseur a refusé le remboursement : ${e instanceof Error ? e.message : e}` };
+      const msg = e instanceof Error ? e.message : String(e);
+      // Déjà remboursé chez le fournisseur (clé d'idempotence expirée, ou remboursement fait dans son tableau de bord) :
+      // l'argent est rendu, il ne faut pas laisser la commande « payée » avec des billets valides.
+      if (!/charge_already_refunded/.test(msg)) return { ok: false, error: `Le fournisseur a refusé le remboursement : ${msg}` };
     }
   }
   const nowStr = nowIso();
