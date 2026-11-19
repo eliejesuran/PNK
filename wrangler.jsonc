@@ -1,0 +1,45 @@
+{
+  // PNK — config Cloudflare Workers. Voir docs/DEPLOY.md avant de déployer.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pnk",
+  "main": "src/index.tsx",
+  "compatibility_date": "2026-10-15",
+
+  // Fichiers statiques (CSS, polices, JS du scanner) servis directement depuis /assets/*
+  "assets": {
+    "directory": "./public"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pnk",
+      // Remplacer par l'id renvoyé par `wrangler d1 create pnk` (inutile en local).
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Nettoyage des réservations expirées + renvoi des emails en échec.
+  "triggers": { "crons": ["*/10 * * * *"] },
+
+  // Envoi d'emails via Cloudflare Email Service (domaine à activer : `wrangler email sending enable <domaine>`).
+  "send_email": [{ "name": "EMAIL" }],
+
+  "observability": { "enabled": true },
+
+  // Valeurs NON secrètes. Les secrets (clés Stripe, etc.) se posent avec `wrangler secret put`.
+  "vars": {
+    "ENVIRONMENT": "production",
+    "PAYMENT_PROVIDER": "stripe",
+    "MAIL_DRIVER": "cloudflare",
+    "MAIL_FROM": "PNK <billets@example.org>",
+    // URL publique de la billetterie, sans slash final (utilisée dans les emails et retours de paiement).
+    "BASE_URL": "https://billets.example.org",
+    // Cloudflare Access : domaine d'équipe (xxx.cloudflareaccess.com) et AUD de l'application.
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": "",
+    // Emails (séparés par des virgules) qui deviennent « owner » à leur première connexion.
+    "BOOTSTRAP_OWNERS": ""
+  }
+}

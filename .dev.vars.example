@@ -1,0 +1,28 @@
+# Copier en `.dev.vars` (ignoré par git) pour le développement local avec `npm run dev`.
+# Ces valeurs écrasent celles de wrangler.jsonc uniquement en local.
+
+ENVIRONMENT=development
+BASE_URL=http://localhost:8787
+
+# Auth admin : en local uniquement (ENVIRONMENT=development ET host localhost), on se connecte
+# directement avec cet email, sans Cloudflare Access.
+DEV_USER_EMAIL=dev@pnk.local
+BOOTSTRAP_OWNERS=dev@pnk.local
+
+# Paiement factice (page "payer / échouer") — refusé hors développement.
+PAYMENT_PROVIDER=mock
+
+# Emails : "log" n'envoie rien, écrit dans la table email_outbox + console.
+MAIL_DRIVER=log
+MAIL_FROM=PNK <billets@pnk.local>
+
+# Secret servant à hacher les IP (anti-abus). Mets une longue valeur aléatoire.
+HASH_SECRET=dev-only-change-me-dev-only-change-me
+
+# --- Production : à poser avec `wrangler secret put <NOM>` (jamais dans un fichier commité) ---
+# STRIPE_SECRET_KEY=sk_test_...
+# STRIPE_WEBHOOK_SECRET=whsec_...
+# RESEND_API_KEY=re_...
+# TURNSTILE_SITE_KEY=0x4AAA...      (clé publique, peut aller dans vars)
+# TURNSTILE_SECRET=0x4AAA...
+# HASH_SECRET=<openssl rand -hex 32>
