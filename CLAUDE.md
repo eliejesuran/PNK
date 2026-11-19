@@ -76,6 +76,12 @@ npx wrangler d1 migrations apply DB --remote   # prod : voir docs/DEPLOY.md
 - Les assets de `public/` sont servis **avant** le Worker (pas d'en-têtes de sécurité du Worker dessus) ; cache 5 min via `public/_headers`.
 - Les iframes sont interdites (`X-Frame-Options: DENY`, `frame-ancestors 'none'`). Si le site de la salle veut intégrer la billetterie : à décider (voir QUESTIONS).
 
+## Visite de démonstration (GitHub Pages)
+Site statique cliquable : https://eliejesuran.github.io/PNK/ — branche `gh-pages` (ne contient que le site généré), **jamais** de données réelles.
+- Régénérer : `npm run db:reset:local` (jamais le fichier d'installation `seed/*.local.sql`) → `npm run dev` → `python3 scripts/build-demo-site.py <dossier> --forbid "<mots réels à interdire>"`
+  (le script refuse de produire le site si `localhost` ou un mot interdit apparaît) → committer le dossier généré **sur `gh-pages`** (dépôt git temporaire, push `gh-pages`).
+- À refaire après toute modification visible de l'interface. Le gabarit de la page d'accueil est `scripts/demo-site/index.html`.
+
 ## État d'avancement (mettre à jour)
 **Fait et vérifié (tests + navigateur local)**
 - [x] Parcours public complet : accueil, page concert (3 langues), achat, page commande + billets QR imprimables, facture, emails.

@@ -12,3 +12,6 @@ coverage/
 
 # Configuration propre a une installation (ASBL, adresse...) : jamais dans le depot public
 seed/*.local.sql
+
+# Sortie locale du générateur de site de démo
+/demo-site/

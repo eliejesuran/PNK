@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Visite de PNK</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+/* Page de sommaire d'un fanzine photocopié : noir, papier, rouge. Le parcours d'un acheteur est une vraie séquence (numérotée) ;
+   le back-office est une grille de rubriques. Aucune dépendance externe. */
+:root {
+  --ink: #0b0b0b; --ink-2: #1a1a1a; --paper: #f1ebdd; --paper-2: #e3dac6; --red: #d7000f; --grey: #b9b3a4;
+  --display: 'Anton', Impact, 'Arial Narrow', sans-serif;
+  --mono: 'Courier Prime', 'Courier New', monospace;
+  --marker: 'Permanent Marker', 'Marker Felt', cursive;
+}
+@font-face { font-family: 'Anton'; src: url('assets/fonts/anton-latin-400-normal.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Courier Prime'; font-weight: 400; src: url('assets/fonts/courier-prime-latin-400-normal.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Courier Prime'; font-weight: 700; src: url('assets/fonts/courier-prime-latin-700-normal.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Permanent Marker'; src: url('assets/fonts/permanent-marker-latin-400-normal.woff2') format('woff2'); font-display: swap; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ink); color: var(--paper); font: 17px/1.5 var(--mono); padding: 0 max(16px, env(safe-area-inset-right, 0px)) 3rem max(16px, env(safe-area-inset-left, 0px)); }
+.page { max-width: 1060px; margin: 0 auto; }
+a { color: inherit; }
+:focus-visible { outline: 4px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 7px var(--red); }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem 0; border-bottom: 4px solid var(--red); }
+.logo { display: inline-flex; gap: 3px; font-family: var(--display); font-size: 2.1rem; line-height: 1; }
+.logo span { padding: 0.12em 0.22em 0.04em; border: 2px solid var(--ink); }
+.logo span:nth-child(1) { background: var(--red); color: #fff; transform: rotate(-4deg); }
+.logo span:nth-child(2) { background: var(--paper); color: var(--ink); transform: rotate(3deg) translateY(2px); font-family: var(--mono); font-weight: 700; }
+.logo span:nth-child(3) { background: #fff; color: var(--red); transform: rotate(-2deg); }
+.tag { font-family: var(--marker); color: var(--red); font-size: 1.3rem; transform: rotate(-2deg); }
+h1, h2 { font-family: var(--display); font-weight: 400; text-transform: uppercase; line-height: 0.95; letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(2.8rem, 10vw, 6rem); margin-top: 2rem; }
+h1 em { font-style: normal; color: var(--red); }
+h2 { font-size: clamp(1.8rem, 5vw, 2.6rem); margin-bottom: 1.2rem; }
+.lead { max-width: 62ch; margin: 1.2rem 0 0; }
+section { margin-top: 3rem; }
+.sub { max-width: 62ch; margin: -0.6rem 0 1.4rem; color: var(--grey); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); counter-reset: step; }
+.steps li { min-width: 0; }
+.step, .tile { display: block; height: 100%; background: var(--paper); color: var(--ink); text-decoration: none; border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--red); padding: 1rem; min-width: 0; transition: transform 0.06s, box-shadow 0.06s; }
+.step:hover, .tile:hover { transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--red); }
+.step b, .tile b { display: block; font-family: var(--display); font-weight: 400; text-transform: uppercase; font-size: 1.5rem; line-height: 1; margin-bottom: 0.4rem; overflow-wrap: anywhere; }
+.step::before { counter-increment: step; content: counter(step); display: inline-grid; place-items: center; width: 2rem; height: 2rem; background: var(--red); color: #fff; font-family: var(--display); font-size: 1.2rem; margin-bottom: 0.7rem; }
+.step span, .tile span { display: block; font-size: 0.95rem; color: #3a362f; }
+.grid { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
+.tile { box-shadow: 5px 5px 0 var(--paper-2); border-color: var(--paper); background: var(--ink-2); color: var(--paper); }
+.tile span { color: var(--grey); }
+.tile:hover { box-shadow: 2px 2px 0 var(--red); border-color: var(--red); }
+.langs { margin-top: 1.4rem; display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: baseline; }
+.langs strong { font-family: var(--display); font-weight: 400; text-transform: uppercase; letter-spacing: 0.06em; color: var(--red); }
+.langs a { font-weight: 700; }
+.note { background: var(--paper); color: var(--ink); border: 4px solid var(--ink); box-shadow: 8px 8px 0 var(--red); padding: 1.3rem; max-width: 760px; }
+.note h2 { font-size: 2rem; margin-bottom: 0.7rem; }
+.note p { margin: 0 0 0.8rem; }
+@media (prefers-reduced-motion: reduce) { .step, .tile { transition: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <span class="logo" aria-label="PNK"><span>P</span><span>N</span><span>K</span></span>
+    <span class="tag">visite guidée</span>
+  </header>
+
+  <h1>Voilà ce que <em>ça donne.</em></h1>
+  <p class="lead">PNK est une billetterie libre pour salles de concert. Ce sont de vraies pages de l’application, remplies avec des données inventées. On passe de l’une à l’autre comme sur le vrai site. Les boutons n’enregistrent rien.</p>
+
+  <section aria-labelledby="h-public">
+    <h2 id="h-public">Ce que voient les spectateurs</h2>
+    <p class="sub">Le parcours d’un acheteur, de la liste des concerts à la facture.</p>
+    <ol class="steps">
+      <li><a class="step" href="home.html"><b>Accueil</b><span>La liste des prochains concerts.</span></a></li>
+      <li><a class="step" href="e-les-sales-gosses.html"><b>Page concert</b><span>Choix des billets, total en direct, paiement.</span></a></li>
+      <li><a class="step" href="e-cafards-et-fils.html"><b>Presque complet</b><span>Ce qui s’affiche quand il reste peu de places.</span></a></li>
+      <li><a class="step" href="o-TICKET.html"><b>Billet</b><span>Le QR code, imprimable, reçu aussi par email.</span></a></li>
+      <li><a class="step" href="o-TICKET-invoice.html"><b>Facture</b><span>Numérotée, avec HT, TVA et TTC.</span></a></li>
+    </ol>
+    <p class="langs">
+      <strong>Autres langues</strong>
+      <a href="home-en.html">Accueil en anglais</a>
+      <a href="home-nl.html">Accueil en néerlandais</a>
+      <a href="e-les-sales-gosses-en.html">Concert en anglais</a>
+      <a href="e-les-sales-gosses-nl.html">Concert en néerlandais</a>
+    </p>
+  </section>
+
+  <section aria-labelledby="h-team">
+    <h2 id="h-team">Ce que voit l’équipe</h2>
+    <p class="sub">Le back-office, réservé aux personnes autorisées.</p>
+    <div class="grid">
+      <a class="tile" href="admin.html"><b>Tableau de bord</b><span>Recettes, billets vendus, courbe par jour, remplissage de chaque concert.</span></a>
+      <a class="tile" href="admin-events.html"><b>Concerts</b><span>La liste, les statuts, les places vendues.</span></a>
+      <a class="tile" href="admin-events-1.html"><b>Fiche d’un concert</b><span>Dates, prix, quotas Standard et NIP, publication.</span></a>
+      <a class="tile" href="admin-events-new.html"><b>Nouveau concert</b><span>Le formulaire de création.</span></a>
+      <a class="tile" href="admin-venues.html"><b>Salles</b><span>Ajouter une salle et sa capacité.</span></a>
+      <a class="tile" href="admin-orders.html"><b>Commandes</b><span>Recherche par nom, email, numéro ou code de billet.</span></a>
+      <a class="tile" href="admin-orders-1.html"><b>Une commande</b><span>Billets, remboursement, renvoi de l’email.</span></a>
+      <a class="tile" href="admin-door.html"><b>Caisse et invités</b><span>Vendre à l’entrée, générer des places NIP gratuites.</span></a>
+      <a class="tile" href="o-GUEST.html"><b>Billets NIP</b><span>Des invitations gratuites, créées par l’équipe.</span></a>
+      <a class="tile" href="admin-reports.html"><b>Rapports</b><span>Ventes par catégorie, exports pour Excel.</span></a>
+      <a class="tile" href="admin-settings.html"><b>Réglages</b><span>Raison sociale, TVA, langue, mentions de facture.</span></a>
+      <a class="tile" href="admin-staff.html"><b>Équipe</b><span>Qui peut faire quoi : propriétaire, gestionnaire, contrôle.</span></a>
+      <a class="tile" href="admin-audit.html"><b>Journal</b><span>Qui a fait quoi, et quand.</span></a>
+      <a class="tile" href="scan.html"><b>Scanner d’entrée</b><span>L’écran du téléphone à la porte de la salle.</span></a>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-code">
+    <div class="note">
+      <h2 id="h-code">Logiciel libre</h2>
+      <p>PNK est publié sous licence GNU AGPL-3.0. Tout le code est lisible, modifiable et réutilisable.</p>
+      <p><a href="https://github.com/eliejesuran/PNK">Voir le code sur GitHub</a></p>
+      <p>Les concerts, les noms et les commandes de cette visite sont inventés.</p>
+    </div>
+  </section>
+</div>
+</body>
+</html>

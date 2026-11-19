@@ -5,6 +5,8 @@ Tourne sur Cloudflare (Workers + D1), logiciel libre sous **GNU AGPL-3.0**.
 
 *Du bruit. Des gens. Des places.*
 
+👉 **[Voir à quoi ça ressemble : visite en ligne](https://eliejesuran.github.io/PNK/)** (pages réelles de l'appli, données fictives).
+
 ## Ce que ça fait
 
 **Public (FR / EN / NL)**
@@ -51,6 +53,7 @@ Les questions encore ouvertes pour finir (TVA, identité légale, sens de « NIP
 
 | | |
 |---|---|
+| [Visite en ligne](https://eliejesuran.github.io/PNK/) | Démo cliquable (GitHub Pages, branche `gh-pages`) |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Mise en production pas à pas + recette |
 | [docs/QUESTIONS.md](docs/QUESTIONS.md) | Décisions à prendre / infos manquantes |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modèle de données, flux d'achat, sécurité |

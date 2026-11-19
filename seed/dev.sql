@@ -28,16 +28,25 @@ INSERT INTO ticket_types (id, event_id, name_fr, name_en, name_nl, price_cents, 
 
 UPDATE ticket_types SET note = 'Not Very Important Person' WHERE name_fr = 'NIP';
 
+-- Organisation FICTIVE pour la démo (les vraies infos se règlent dans Réglages ; TVA 0 % comme le choix de départ du propriétaire)
+INSERT INTO settings (key, value) VALUES
+  ('org_legal_name', 'Association Démo ASBL'),
+  ('org_address', '1 rue du Vacarme' || char(10) || '1000 Bruxelles'),
+  ('org_vat_number', 'BE 0000.000.000'),
+  ('org_email', 'contact@exemple.be'),
+  ('default_vat_bp', '0')
+ON CONFLICT(key) DO UPDATE SET value = excluded.value;
+
 -- Commandes payées de démonstration (jours variés pour que le graphique ait du relief)
 INSERT INTO orders (id, token, event_id, status, channel, payment_method, provider, email, name, lang, total_cents, vat_rate_bp, invoice_year, invoice_seq, created_at, paid_at) VALUES
-  (1, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'camille@example.com',  'Camille Dupont',  'fr', 3000, 600, CAST(strftime('%Y','now') AS INTEGER), 1, strftime('%Y-%m-%dT%H:%M:%fZ','now','-12 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-12 days')),
-  (2, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'jan@example.com',     'Jan Peeters',     'nl', 1500, 600, CAST(strftime('%Y','now') AS INTEGER), 2, strftime('%Y-%m-%dT%H:%M:%fZ','now','-9 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-9 days')),
-  (3, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'sam@example.com',     'Sam Taylor',      'en', 4500, 600, CAST(strftime('%Y','now') AS INTEGER), 3, strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days')),
-  (4, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'lou@example.com',     'Lou Martin',      'fr', 3000, 600, CAST(strftime('%Y','now') AS INTEGER), 4, strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days')),
-  (5, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'ines@example.com',    'Inès Lambert',    'fr', 6000, 600, CAST(strftime('%Y','now') AS INTEGER), 5, strftime('%Y-%m-%dT%H:%M:%fZ','now','-3 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-3 days')),
-  (6, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'noa@example.com',     'Noa Vermeulen',   'nl', 3000, 600, CAST(strftime('%Y','now') AS INTEGER), 6, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days')),
+  (1, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'camille@example.com',  'Camille Dupont',  'fr', 3000, 0, CAST(strftime('%Y','now') AS INTEGER), 1, strftime('%Y-%m-%dT%H:%M:%fZ','now','-12 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-12 days')),
+  (2, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'jan@example.com',     'Jan Peeters',     'nl', 1500, 0, CAST(strftime('%Y','now') AS INTEGER), 2, strftime('%Y-%m-%dT%H:%M:%fZ','now','-9 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-9 days')),
+  (3, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'sam@example.com',     'Sam Taylor',      'en', 4500, 0, CAST(strftime('%Y','now') AS INTEGER), 3, strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days')),
+  (4, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'lou@example.com',     'Lou Martin',      'fr', 3000, 0, CAST(strftime('%Y','now') AS INTEGER), 4, strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-6 days')),
+  (5, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'ines@example.com',    'Inès Lambert',    'fr', 6000, 0, CAST(strftime('%Y','now') AS INTEGER), 5, strftime('%Y-%m-%dT%H:%M:%fZ','now','-3 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-3 days')),
+  (6, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'online', 'online', 'mock', 'noa@example.com',     'Noa Vermeulen',   'nl', 3000, 0, CAST(strftime('%Y','now') AS INTEGER), 6, strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 days')),
   (7, substr(hex(randomblob(16)), 1, 32), 1, 'paid', 'guest', 'free', 'none', 'potes@example.com', 'Les potes du groupe', 'fr', 0, 0, NULL, NULL, strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days'), strftime('%Y-%m-%dT%H:%M:%fZ','now','-2 days')),
-  (8, substr(hex(randomblob(16)), 1, 32), 2, 'paid', 'online', 'online', 'mock', 'bande@example.com',   'Marie Leroy',     'fr', 4800, 600, CAST(strftime('%Y','now') AS INTEGER), 7, strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days'));
+  (8, substr(hex(randomblob(16)), 1, 32), 2, 'paid', 'online', 'online', 'mock', 'bande@example.com',   'Marie Leroy',     'fr', 4800, 0, CAST(strftime('%Y','now') AS INTEGER), 7, strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days'),  strftime('%Y-%m-%dT%H:%M:%fZ','now','-4 days'));
 
 INSERT INTO order_items (order_id, ticket_type_id, qty, unit_price_cents) VALUES
   (1, 1, 2, 1500), (2, 1, 1, 1500), (3, 1, 3, 1500), (4, 1, 2, 1500), (5, 1, 4, 1500), (6, 1, 2, 1500), (7, 2, 2, 0), (8, 3, 4, 1200);
