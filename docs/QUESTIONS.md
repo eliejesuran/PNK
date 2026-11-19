@@ -64,7 +64,7 @@ Dans les deux cas, **je ne déploie rien sans que tu me le demandes explicitemen
     Veux-tu un nom par billet, une interdiction de transfert, une limite par personne ?
 12. **Contrôle à l'entrée** : le réseau (wifi/4G) est-il fiable dans la salle ? Sinon je développe un **mode hors-ligne** (liste des codes
     pré-chargée). Combien de portes/scanners ? Avec quels téléphones (iPhone = lecture par jsQR, Android Chrome = lecture native, tous deux prévus) ?
-13. **Impression** : le billet s'imprime en A4 (jusqu'à 3 par page, noir et blanc OK). Besoin d'un format **ticket thermique 80 mm** (imprimante de
+13. **Impression** : le billet s'imprime en A4 (2 par page au maximum, noir et blanc OK). Besoin d'un format **ticket thermique 80 mm** (imprimante de
     caisse) ou d'un **PDF** joint à l'email ?
 14. **Jauge et placement** : seulement des quotas par catégorie (debout / général), pas de plan de salle numéroté. C'est bon ?
 15. **Affiche des concerts** : actuellement on colle l'URL d'une image hébergée ailleurs. Veux-tu pouvoir **envoyer l'image** directement (stockage R2) ?

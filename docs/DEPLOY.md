@@ -10,18 +10,20 @@ calcul de QR, le plan gratuit limite le CPU à 10 ms par requête) et des frais 
 - **Un nom de domaine** (≈ 10–15 €/an) géré par Cloudflare : pas nécessaire pour développer et tester sur `*.workers.dev`, mais **indispensable avant d'ouvrir la vente** (emails d'expédition, protection du back-office par chemin, confiance des acheteurs).
 - Compte Stripe (de l'organisateur légal), en **mode test** d'abord.
 
-## 1. Base de données D1
+## 1. Base de données D1 et configuration locale
+Le dépôt est public : les identifiants propres à ton compte ne vont **jamais** dans `wrangler.jsonc`. On les met dans `wrangler.local.jsonc`
+(copie de `wrangler.jsonc`, **ignorée par git**), utilisée par `npm run deploy` et `npm run db:migrate:remote`.
 ```bash
-npx wrangler d1 create pnk
-# copie le "database_id" affiché dans wrangler.jsonc (d1_databases[0].database_id)
-npx wrangler d1 migrations apply DB --remote
+npx wrangler d1 create pnk --location weur     # base en Europe de l'Ouest
+cp wrangler.jsonc wrangler.local.jsonc          # puis colle le "database_id" affiché dans wrangler.local.jsonc
+npm run db:migrate:remote
 ```
 Ne lance **jamais** `seed/dev.sql` en production (données de démonstration).
 La configuration de l'installation (raison sociale, adresse, TVA par défaut) se pose avec un fichier **non commité** :
-`seed/instance.local.sql` (ignoré par git) puis `npx wrangler d1 execute DB --remote --file=seed/instance.local.sql`.
+`seed/instance.local.sql` (ignoré par git) puis `npx wrangler d1 execute DB --remote -c wrangler.local.jsonc --file=seed/instance.local.sql`.
 Tout reste modifiable ensuite dans *Réglages*.
 
-## 2. Variables (`wrangler.jsonc` → `vars`)
+## 2. Variables (`wrangler.local.jsonc` → `vars`)
 | Variable | Valeur |
 |---|---|
 | `BASE_URL` | `https://billets.tondomaine.be` (sans slash final) |
@@ -34,11 +36,11 @@ Domaine personnalisé : ajoute dans `wrangler.jsonc` : `"routes": [{ "pattern": 
 
 ## 3. Secrets
 ```bash
-npx wrangler secret put HASH_SECRET            # openssl rand -hex 32
-npx wrangler secret put BOOTSTRAP_OWNERS       # emails (séparés par des virgules) des 1ers PROPRIÉTAIRES, ex. toi@exemple.be
+npx wrangler secret put HASH_SECRET -c wrangler.local.jsonc            # openssl rand -hex 32
+npx wrangler secret put BOOTSTRAP_OWNERS -c wrangler.local.jsonc       # emails (séparés par des virgules) des 1ers PROPRIÉTAIRES, ex. toi@exemple.be
                                                # (en secret et non dans wrangler.jsonc : le dépôt est public)
-npx wrangler secret put STRIPE_SECRET_KEY      # sk_test_… puis sk_live_… au passage en production
-npx wrangler secret put STRIPE_WEBHOOK_SECRET  # whsec_… (voir §5)
+npx wrangler secret put STRIPE_SECRET_KEY -c wrangler.local.jsonc      # sk_test_… puis sk_live_… au passage en production
+npx wrangler secret put STRIPE_WEBHOOK_SECRET -c wrangler.local.jsonc  # whsec_… (voir §5)
 # facultatifs : TURNSTILE_SECRET (+ TURNSTILE_SITE_KEY en var), RESEND_API_KEY
 ```
 
@@ -71,7 +73,7 @@ Sans ça, `/admin`, `/scan` et `/api/*` répondent **503** (le Worker refuse par
 
 ## 8. Déployer puis recette
 ```bash
-npm run check && npx wrangler deploy
+npm run deploy      # = npm run check puis wrangler deploy -c wrangler.local.jsonc
 ```
 Recette à faire **en mode test Stripe**, avec toi (je ne peux pas la faire seul) :
 - [ ] `https://…/` s'affiche ; `/admin` te demande ta connexion Access puis t'ouvre ; un inconnu est refusé.

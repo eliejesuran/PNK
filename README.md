@@ -12,7 +12,7 @@ Tourne sur Cloudflare (Workers + D1), logiciel libre sous **GNU AGPL-3.0**.
 **Public (FR / EN / NL)**
 - Page par concert : infos, prix, places restantes, achat en 2 clics ; liste des prochains concerts.
 - Paiement par **Stripe Checkout** : cartes, **Apple Pay**, **Google Pay**, et selon ta config Bancontact / iDEAL / etc. (appli bancaire).
-- Billet avec **QR code** (page web + email), **imprimable** (A4, 3 billets par page) ; **facture** (HT/TVA/TTC) imprimable.
+- Billet avec **QR code** (page web + email), **imprimable** (A4, 2 billets par page au maximum) ; **facture** (HT/TVA/TTC) imprimable.
 - Facture au nom d'une société sur demande (n° TVA, adresse).
 
 **Back-office** (protégé par Cloudflare Access + rôles)

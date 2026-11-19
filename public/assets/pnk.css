@@ -326,7 +326,10 @@ body.scan-body { background: var(--ink); color: var(--paper); }
   .top, .foot, .admin-top, .no-print, .skip { display: none !important; }
   .wrap { padding: 0; width: 100%; }
   .status-box, .actions, .hero { display: none !important; }
-  .tickets { gap: 8mm; margin: 0; }
+  /* 2 billets par page, jamais plus : bloc normal (la pagination d'une grille est peu fiable), saut de page après chaque 2e billet */
+  .tickets { display: block; margin: 0; }
+  .tickets > .ticket { margin: 0 0 10mm; break-inside: avoid; page-break-inside: avoid; }
+  .tickets > .ticket:nth-child(2n):not(:last-child) { break-after: page; page-break-after: always; margin-bottom: 0; }
   .ticket, .sheet, .paper { box-shadow: none !important; border-width: 2px; }
   .ticket { grid-template-columns: 1fr 55mm; page-break-inside: avoid; }
   .ticket .band { grid-column: 1 / -1; background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }

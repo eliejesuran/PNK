@@ -15,3 +15,6 @@ seed/*.local.sql
 
 # Sortie locale du générateur de site de démo
 /demo-site/
+
+# Configuration de déploiement propre à cette installation (identifiants de compte, URL) : jamais dans le dépôt public
+wrangler.local.jsonc

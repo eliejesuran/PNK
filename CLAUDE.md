@@ -61,7 +61,7 @@ npx wrangler d1 migrations apply DB --remote   # prod : voir docs/DEPLOY.md
    `test/unit.test.ts` vérifient la parité des clés et des `{variables}`).
 7. **Échapper** : JSX échappe seul ; pour du HTML construit à la main (emails) utiliser `esc()`. Les CSV passent par `csvCell` (anti-injection de formules).
 8. **Tout fichier source** commence par `// SPDX-License-Identifier: AGPL-3.0-or-later` (ou `/* … */` / `--`).
-9. **Secrets et données d'installation** : jamais dans le dépôt (public !). `.dev.vars` est ignoré ; secrets de prod via `wrangler secret put` (dont `BOOTSTRAP_OWNERS`, les emails des premiers propriétaires). La configuration propre à l'organisation (raison sociale, adresse, TVA par défaut…) vit dans `seed/*.local.sql` (ignoré par git) et dans la table `settings`. Ne jamais écrire emails, noms ou adresses réels dans le code, les docs ou les tests.
+9. **Secrets et données d'installation** : jamais dans le dépôt (public !). `.dev.vars` est ignoré ; secrets de prod via `wrangler secret put` (dont `BOOTSTRAP_OWNERS`, les emails des premiers propriétaires). La configuration propre à l'organisation (raison sociale, adresse, TVA par défaut…) vit dans `seed/*.local.sql` (ignoré par git) et dans la table `settings` ; les identifiants de compte Cloudflare (database_id, URL…) vivent dans `wrangler.local.jsonc` (ignoré par git, utilisé par `npm run deploy`). Ne jamais écrire emails, noms ou adresses réels dans le code, les docs ou les tests.
 10. Tout changement de logique métier = un test (ou plus) ; les bugs corrigés laissent un test de non-régression.
 
 ## Pièges connus (déjà rencontrés)
@@ -74,6 +74,7 @@ npx wrangler d1 migrations apply DB --remote   # prod : voir docs/DEPLOY.md
 - Le limiteur de débit regroupe par `cf-connecting-ip` ; en `wrangler dev` l'en-tête est absent (tous = « unknown », 12 achats/10 min).
 - D1 : paramètres `?1`, `?2` numérotés ; `batch()` est transactionnel mais un `INSERT…SELECT` à 0 ligne ne lève pas d'erreur → vérifier `meta.changes`.
 - Les assets de `public/` sont servis **avant** le Worker (pas d'en-têtes de sécurité du Worker dessus) ; cache 5 min via `public/_headers`.
+- **Impression des billets : 2 par page au maximum** (`@media print` dans `pnk.css` : bloc normal + `break-after: page` après chaque 2ᵉ billet). Vérifier après toute modification avec Chrome sans interface : créer des commandes de 1 à 5 billets, `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --no-pdf-header-footer --print-to-pdf=x.pdf <url /o/TOKEN>`, compter les `/Type /Page` du PDF → attendu 1, 1, 2, 2, 3 pages.
 - Les iframes sont interdites (`X-Frame-Options: DENY`, `frame-ancestors 'none'`). Si le site de la salle veut intégrer la billetterie : à décider (voir QUESTIONS).
 
 ## Visite de démonstration (GitHub Pages)

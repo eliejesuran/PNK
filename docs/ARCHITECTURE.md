@@ -49,5 +49,5 @@ Détails : `SECURITY.md`.
 ## Choix et alternatives
 - **Stripe REST sans SDK** : bundle minuscule, comportement explicite ; interface `PaymentProvider` pour changer de fournisseur.
 - **D1** plutôt que KV/DO : transactions (`batch`) et SQL pour les rapports. Le stock repose sur la sérialisation des écritures SQLite.
-- **Pas de PDF** : l'impression passe par le CSS `@media print` (A4, 3 billets/page) — zéro dépendance, rendu fidèle. PDF joint = amélioration possible.
+- **Pas de PDF** : l'impression passe par le CSS `@media print` (A4, 2 billets/page au maximum) — zéro dépendance, rendu fidèle. PDF joint = amélioration possible.
 - **Quotas, pas de plan de salle** : suffisant pour une salle de concerts debout.
