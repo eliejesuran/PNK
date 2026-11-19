@@ -497,7 +497,8 @@ describe('réglages et équipe', () => {
   const settingsForm = (extra: Record<string, string> = {}) => ({
     org_name: 'Les Punks',
     org_legal_name: 'Les Punks ASBL',
-    org_vat_number: 'BE0123456789',
+    org_company_number: '0123.456.789',
+    org_vat_number: '',
     org_email: 'contact@punks.test',
     default_vat: '6',
     timezone: 'Europe/Brussels',
@@ -517,6 +518,9 @@ describe('réglages et équipe', () => {
     await http(`/pay/mock/${token}`, { form: { result: 'success' } });
     expect(await (await http(`/o/${token}/invoice`)).text()).toContain(`LP-${new Date().getFullYear()}-00001`);
     expect(await count("SELECT COUNT(*) AS n FROM audit_log WHERE action = 'settings.update'")).toBe(1);
+    expect((await e.DB.prepare("SELECT value FROM settings WHERE key = 'org_company_number'").first<{ value: string }>())!.value).toBe('0123.456.789');
+    // le bandeau « il reste… » ne réclame plus le numéro d'entreprise
+    expect(await (await http('/admin')).text()).not.toContain('Numéro d’entreprise (BCE) ou de TVA');
   });
 
   it('refuse les valeurs invalides sans rien enregistrer', async () => {

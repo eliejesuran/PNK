@@ -77,7 +77,7 @@ npx wrangler d1 migrations apply DB --remote   # prod : voir docs/DEPLOY.md
 - Les iframes sont interdites (`X-Frame-Options: DENY`, `frame-ancestors 'none'`). Si le site de la salle veut intégrer la billetterie : à décider (voir QUESTIONS).
 
 ## Visite de démonstration (GitHub Pages)
-Site statique cliquable : https://eliejesuran.github.io/PNK/ — branche `gh-pages` (ne contient que le site généré), **jamais** de données réelles.
+Site statique cliquable : https://eliejesuran.github.io/PNK/ — branche `gh-pages` (ne contient que le site généré). Il montre l'identité **publique** de l'organisation (raison sociale, siège, n° d'entreprise, email de contact) **sur demande expresse du propriétaire** ; concerts, noms de spectateurs et commandes y sont fictifs, jamais de vraies données de clients.
 - Régénérer : `npm run db:reset:local` (jamais le fichier d'installation `seed/*.local.sql`) → `npm run dev` → `python3 scripts/build-demo-site.py <dossier> --forbid "<mots réels à interdire>"`
   (le script refuse de produire le site si `localhost` ou un mot interdit apparaît) → committer le dossier généré **sur `gh-pages`** (dépôt git temporaire, push `gh-pages`).
 - À refaire après toute modification visible de l'interface. Le gabarit de la page d'accueil est `scripts/demo-site/index.html`.
@@ -93,7 +93,7 @@ Site statique cliquable : https://eliejesuran.github.io/PNK/ — branche `gh-pag
 - [x] Scanner d'entrée (caméra BarcodeDetector/jsQR + saisie manuelle, anti double passage atomique, compteur).
 - [x] Sécurité : Cloudflare Access (JWT RS256) + rôles, CSP, CSRF, anti-abus (limiteur + Turnstile optionnel), audit.
 - [x] 3 langues publiques, style punk, responsive (vérifié en mobile 375 px).
-- [x] 122 tests verts ; `tsc` strict propre.
+- [x] 123 tests verts ; `tsc` strict propre.
 
 **Pas vérifié en réel (aucun accès aux comptes)** — à faire au déploiement, voir `docs/DEPLOY.md` §Recette :
 - [ ] Vrai paiement Stripe (mode test) + webhook, Apple Pay / Google Pay / Bancontact.
@@ -108,7 +108,7 @@ Site statique cliquable : https://eliejesuran.github.io/PNK/ — branche `gh-pag
 - [ ] Mode scanner hors-ligne (liste de codes en cache) si le réseau de la salle est mauvais.
 - [ ] Pages légales (CGV, confidentialité) : le lien CGV est un réglage, le texte reste à fournir par la salle.
 
-**Bloqué en attente du propriétaire** : voir `docs/QUESTIONS.md` — n° BCE + code postal + mention de facture à TVA 0 %, compte Stripe (de l'ASBL), nom de domaine (non urgent pour tester, requis avant la vente), connexion `wrangler login`, textes légaux, email d'expédition. Déjà répondu : NIP, identité de l'organisateur, TVA 0 % (modifiable), Belgique, premier propriétaire.
+**Bloqué en attente du propriétaire** : voir `docs/QUESTIONS.md` — code postal du siège + mention de facture à TVA 0 %, compte Stripe (de l'ASBL), nom de domaine (non urgent pour tester, requis avant la vente), connexion `wrangler login`, textes légaux, email d'expédition. Déjà répondu : NIP, identité de l'organisateur (nom, siège, n° d'entreprise, email), TVA 0 % (modifiable), Belgique, premier propriétaire.
 
 ## Déroulé de travail attendu
 1. `npm run check` avant chaque commit. Messages de commit en français, concis, à l'impératif ; terminer par la ligne de co-auteur demandée.

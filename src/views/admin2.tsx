@@ -40,7 +40,10 @@ export const SettingsView: FC<{ a: A; s: Settings; vatPercent: string; errors: s
         <Field id="org_legal_name" label="Raison sociale" hint="Ex. : Les Punks ASBL">
           <input id="org_legal_name" name="org_legal_name" type="text" maxlength={120} value={s.org_legal_name} />
         </Field>
-        <Field id="org_vat_number" label="N° de TVA / d’entreprise">
+        <Field id="org_company_number" label="N° d’entreprise (BCE)" hint="Obligatoire sur les factures. Ex. : 0123.456.789">
+          <input id="org_company_number" name="org_company_number" type="text" maxlength={40} value={s.org_company_number} />
+        </Field>
+        <Field id="org_vat_number" label="N° de TVA (seulement si assujetti)" hint="Laisse vide si l’organisation n’est pas assujettie à la TVA">
           <input id="org_vat_number" name="org_vat_number" type="text" maxlength={40} value={s.org_vat_number} />
         </Field>
         <Field id="org_email" label="Email de contact">

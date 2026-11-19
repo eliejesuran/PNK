@@ -110,6 +110,7 @@ export const en: Dict = {
   'inv.method_terminal': 'bank card (terminal)',
   'inv.method_free': 'free',
   'inv.vat_no': 'VAT no.',
+  'inv.company_no': 'Company no.',
   'inv.refunded': 'REFUNDED',
   'inv.none': 'No invoice for this order (free tickets).',
   'inv.print': 'Print invoice',

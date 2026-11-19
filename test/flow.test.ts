@@ -156,6 +156,28 @@ describe('achat', () => {
     expect(html).toContain('TVA 6 %');
   });
 
+  it('organisation non assujettie : le n° d’entreprise (BCE) s’imprime comme tel, jamais comme « n° de TVA »', async () => {
+    await e.DB.prepare("UPDATE settings SET value = 'Asso Test ASBL' WHERE key = 'org_legal_name'").run();
+    await e.DB.prepare("UPDATE settings SET value = '0123.456.789' WHERE key = 'org_company_number'").run();
+    await e.DB.prepare("UPDATE settings SET value = '0' WHERE key = 'default_vat_bp'").run();
+    const s = await seedEvent();
+    const fr = await placeOrder(s);
+    const nl = await placeOrder(s, { lang: 'nl' });
+    await pay(fr);
+    await pay(nl);
+    const html = await (await http(`/o/${fr}/invoice`)).text();
+    expect(html).toContain('N° d’entreprise: 0123.456.789');
+    expect(html).not.toContain('N° de TVA');
+    expect(html).toContain('TVA 0 %');
+    expect(html).toMatch(/Total HT<\/td><td class="num">30,00/); // TVA à 0 % : HT = TTC
+    expect(await (await http(`/o/${nl}/invoice`)).text()).toContain('Ondernemingsnr.: 0123.456.789');
+    // un n° de TVA, s'il existe, s'ajoute (sans remplacer le n° d'entreprise)
+    await e.DB.prepare("UPDATE settings SET value = 'BE0123456789' WHERE key = 'org_vat_number'").run();
+    const both = await (await http(`/o/${fr}/invoice`)).text();
+    expect(both).toContain('N° d’entreprise: 0123.456.789');
+    expect(both).toContain('N° de TVA: BE0123456789');
+  });
+
   it('numérotation des factures continue sans doublon', async () => {
     const s = await seedEvent();
     const tokens = [await placeOrder(s), await placeOrder(s), await placeOrder(s)];

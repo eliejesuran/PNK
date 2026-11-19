@@ -110,6 +110,7 @@ export const fr = {
   'inv.method_terminal': 'carte bancaire (terminal)',
   'inv.method_free': 'gratuit',
   'inv.vat_no': 'N° de TVA',
+  'inv.company_no': 'N° d’entreprise',
   'inv.refunded': 'REMBOURSÉE',
   'inv.none': 'Pas de facture pour cette commande (billets gratuits).',
   'inv.print': 'Imprimer la facture',

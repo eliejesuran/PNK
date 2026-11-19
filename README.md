@@ -41,7 +41,7 @@ En local, `/admin` s'ouvre directement (identité `dev@pnk.local`, propriétaire
 Ces deux facilités sont **désactivées automatiquement** hors `ENVIRONMENT=development` et hors `localhost`.
 
 ```bash
-npm run check    # typecheck + 122 tests (vrai runtime Workers, vraie base D1 locale)
+npm run check    # typecheck + 123 tests (vrai runtime Workers, vraie base D1 locale)
 ```
 
 ## Déployer

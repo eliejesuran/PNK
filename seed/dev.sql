@@ -32,7 +32,7 @@ UPDATE ticket_types SET note = 'Not Very Important Person' WHERE name_fr = 'NIP'
 INSERT INTO settings (key, value) VALUES
   ('org_legal_name', 'Association Démo ASBL'),
   ('org_address', '1 rue du Vacarme' || char(10) || '1000 Bruxelles'),
-  ('org_vat_number', 'BE 0000.000.000'),
+  ('org_company_number', '0000.000.000'),
   ('org_email', 'contact@exemple.be'),
   ('default_vat_bp', '0')
 ON CONFLICT(key) DO UPDATE SET value = excluded.value;

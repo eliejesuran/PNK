@@ -23,7 +23,7 @@ export async function http(path: string, init: RequestInit & { form?: Record<str
 }
 
 const DEFAULT_SETTINGS: [string, string][] = [
-  ['org_name', 'PNK'], ['org_legal_name', ''], ['org_address', ''], ['org_vat_number', ''], ['org_email', ''], ['org_phone', ''],
+  ['org_name', 'PNK'], ['org_legal_name', ''], ['org_address', ''], ['org_company_number', ''], ['org_vat_number', ''], ['org_email', ''], ['org_phone', ''],
   ['org_website', ''], ['timezone', 'Europe/Brussels'], ['currency', 'EUR'], ['default_vat_bp', '600'], ['default_lang', 'fr'],
   ['invoice_prefix', 'PNK'], ['invoice_footer', ''], ['terms_url', ''],
 ];

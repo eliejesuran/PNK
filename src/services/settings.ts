@@ -9,6 +9,7 @@ export interface Settings {
   org_name: string;
   org_legal_name: string;
   org_address: string;
+  org_company_number: string;
   org_vat_number: string;
   org_email: string;
   org_phone: string;
@@ -26,6 +27,7 @@ export const SETTING_KEYS = [
   'org_name',
   'org_legal_name',
   'org_address',
+  'org_company_number',
   'org_vat_number',
   'org_email',
   'org_phone',
@@ -52,6 +54,7 @@ export async function getSettings(db: D1Database): Promise<Settings> {
     org_name: str('org_name', 'PNK'),
     org_legal_name: str('org_legal_name'),
     org_address: str('org_address'),
+    org_company_number: str('org_company_number'),
     org_vat_number: str('org_vat_number'),
     org_email: str('org_email'),
     org_phone: str('org_phone'),
@@ -82,7 +85,7 @@ export function setupGaps(s: Settings): string[] {
   const gaps: string[] = [];
   if (!s.org_legal_name) gaps.push('Raison sociale de l’organisateur (obligatoire sur les factures)');
   if (!s.org_address) gaps.push('Adresse de l’organisateur (obligatoire sur les factures)');
-  if (!s.org_vat_number) gaps.push('Numéro d’entreprise (BCE) et/ou de TVA (obligatoire sur les factures)');
+  if (!s.org_company_number && !s.org_vat_number) gaps.push('Numéro d’entreprise (BCE) ou de TVA (obligatoire sur les factures)');
   if (!s.org_email) gaps.push('Email de contact');
   if (!s.terms_url) gaps.push('Lien vers les conditions de vente');
   return gaps;

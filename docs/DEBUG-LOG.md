@@ -1,6 +1,6 @@
 # Journal de debug
 
-Résultat actuel : `npm run check` → typecheck strict propre, **122 tests** verts (runtime Workers réel + base D1 locale).
+Résultat actuel : `npm run check` → typecheck strict propre, **123 tests** verts (runtime Workers réel + base D1 locale).
 `npm audit --omit=dev` : 0 vulnérabilité (les alertes restantes sont dans l'outillage de dev).
 
 ## Passe 1 — tests d'intégration au premier lancement

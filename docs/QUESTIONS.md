@@ -8,15 +8,15 @@ c'est bon. Les 🔴 bloquent la mise en vente réelle, les 🟠 changent le rés
 - **NIP = « Not Very Important Person »**, uniquement dans le back-office pour **générer des places gratuites** (invitations). Fait : NIP n'est
   jamais en vente en ligne (même en forçant le formulaire, testé), gratuit, avec un petit texte imprimé sur le billet ; on le génère depuis
   *Caisse / invités → Invitation gratuite*.
-- **Organisateur** : raison sociale et adresse de l'ASBL — configurées dans cette installation, **hors du dépôt public** (fichier local ignoré par git).
+- **Organisateur** : raison sociale, siège, n° d'entreprise et email de contact — configurés dans cette installation, **hors du code du dépôt** (fichier local ignoré par git). Le site de démo en ligne les affiche volontairement (choix du propriétaire).
 - **TVA : 0 % pour commencer**, modifiable à tout moment (*Réglages*, pour tout le site ; ou concert par concert).
 - **Pays : Belgique** (EUR, fuseau Europe/Brussels).
 - **Premier propriétaire** du back-office : renseigné (secret Cloudflare, pas dans le dépôt). Les autres personnes s'ajoutent dans *Équipe*.
 
 ## 🔴 Encore bloquantes avant de vendre pour de vrai
 
-1. **Numéro d'entreprise (BCE)** de l'ASBL (+ n° de TVA s'il y en a un) et **code postal** : ils s'impriment sur les factures.
-   Un **email de contact** public (ex. `contact@…`) aussi.
+1. ✅ **Numéro d'entreprise, email de contact et siège** : renseignés. **Reste :** le **code postal** du siège, et confirmer la dénomination exacte sur les factures
+   (j'ai ajouté « ASBL » à la fin du nom). Un champ « n° d'entreprise (BCE) » distinct du n° de TVA a été ajouté : une organisation non assujettie n'a pas de n° de TVA.
 2. **TVA à 0 % : quelle mention sur la facture ?** Si l'ASBL n'est pas assujettie, une mention du type « TVA non applicable » est en général
    requise — **à faire valider par le comptable** ; il y a un champ « mentions de pied de facture » dans *Réglages* pour l'écrire.
 3. **Compte Stripe** (le prestataire qui encaisse les paiements) : à créer par un représentant de l'ASBL — voir « Qu'est-ce que Stripe ? » plus bas.

@@ -110,6 +110,7 @@ export const nl: Dict = {
   'inv.method_terminal': 'bankkaart (terminal)',
   'inv.method_free': 'gratis',
   'inv.vat_no': 'BTW-nr.',
+  'inv.company_no': 'Ondernemingsnr.',
   'inv.refunded': 'TERUGBETAALD',
   'inv.none': 'Geen factuur voor deze bestelling (gratis tickets).',
   'inv.print': 'Factuur afdrukken',

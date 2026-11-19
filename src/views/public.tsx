@@ -487,6 +487,12 @@ export const InvoiceView: FC<
                 <b>{sellerName}</b>
                 <br />
                 <span class="pre">{s.org_address}</span>
+                {s.org_company_number ? (
+                  <>
+                    <br />
+                    {t(lang, 'inv.company_no')}: {s.org_company_number}
+                  </>
+                ) : null}
                 {s.org_vat_number ? (
                   <>
                     <br />
