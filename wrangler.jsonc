@@ -31,7 +31,7 @@
   // Valeurs NON secrètes. Les secrets (clés Stripe, etc.) se posent avec `wrangler secret put`.
   "vars": {
     "ENVIRONMENT": "production",
-    "PAYMENT_PROVIDER": "stripe",
+    "PAYMENT_PROVIDER": "mollie",
     "MAIL_DRIVER": "cloudflare",
     "MAIL_FROM": "PNK <billets@example.org>",
     // URL publique de la billetterie, sans slash final (utilisée dans les emails et retours de paiement).

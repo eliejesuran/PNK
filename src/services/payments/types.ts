@@ -29,7 +29,7 @@ export interface SessionState {
 }
 
 export interface PaymentProvider {
-  readonly name: 'stripe' | 'mock';
+  readonly name: 'stripe' | 'mollie' | 'mock';
   createCheckout(args: CreateCheckoutArgs): Promise<{ sessionId: string; url: string }>;
   /** Interroge le fournisseur pour savoir si la session est payée (filet de sécurité si le webhook tarde). */
   retrieveSession(sessionId: string): Promise<SessionState>;

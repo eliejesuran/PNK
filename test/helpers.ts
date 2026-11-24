@@ -86,3 +86,26 @@ export function formBody(seed: Seed, extra: Record<string, string> = {}): Record
 
 export const cookieOf = (res: Response) => res.headers.get('set-cookie') ?? '';
 export const locationOf = (res: Response) => res.headers.get('location') ?? '';
+
+export interface Call {
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body: URLSearchParams | null;
+  raw: string;
+}
+
+/** Faux `fetch` : enregistre les appels et répond selon la route. */
+export function fakeFetch(handler: (c: Call) => Response | Promise<Response>) {
+  const calls: Call[] = [];
+  const fn = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const h: Record<string, string> = {};
+    new Headers(init?.headers).forEach((v, k) => (h[k.toLowerCase()] = v));
+    const raw = typeof init?.body === 'string' ? init.body : '';
+    const call: Call = { url: String(input), method: init?.method ?? 'GET', headers: h, body: raw && !raw.startsWith('{') ? new URLSearchParams(raw) : null, raw };
+    calls.push(call);
+    return handler(call);
+  };
+  return { calls, fn: fn as unknown as typeof fetch };
+}
+export const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json' } });

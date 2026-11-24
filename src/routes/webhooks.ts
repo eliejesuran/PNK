@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Webhook Stripe : confirme les paiements (source de vérité), idempotent.
+// Webhooks de paiement (Stripe, Mollie) : confirment les paiements (source de vérité), idempotents.
 
 import { Hono } from 'hono';
 import type { AppEnv } from '../env';
 import { baseUrlOf } from '../lib/security';
 import { cancelOrder, fulfillOrder, getOrderById } from '../services/orders';
+import { providerFor } from '../services/payments';
+import type { OrderRow } from '../services/types';
 import { verifyStripeSignature, type StripeEvent } from '../services/payments/stripe';
 
 export const webhookRoutes = new Hono<AppEnv>();
@@ -61,4 +63,27 @@ webhookRoutes.post('/webhooks/stripe', async (c) => {
 
   await db.prepare("INSERT OR IGNORE INTO webhook_events (provider, event_id) VALUES ('stripe', ?1)").bind(evt.id).run();
   return c.json({ received: true });
+});
+
+// ---------- Mollie ----------
+// Mollie envoie « id=tr_xxx » (formulaire) et RIEN d'autre, sans signature. C'est sûr par construction : on relit le paiement chez
+// Mollie avec notre clé et on n'agit que sur une commande qui porte cet identifiant. Une fausse requête ne peut valider aucune commande.
+// Réponse : toujours 200 (Mollie le recommande, même pour un identifiant inconnu) ; une erreur d'API chez Mollie renvoie 500 pour qu'il réessaie.
+webhookRoutes.post('/webhooks/mollie', async (c) => {
+  const provider = providerFor(c.env, 'mollie');
+  if (!provider) return c.text('mollie non configuré', 503);
+  const form = (await c.req.parseBody().catch(() => ({}))) as Record<string, unknown>;
+  const id = typeof form.id === 'string' ? form.id : '';
+  if (!/^tr_[A-Za-z0-9]{1,40}$/.test(id)) return c.text('ok');
+
+  const order = await c.env.DB.prepare("SELECT * FROM orders WHERE provider = 'mollie' AND provider_session_id = ?1").bind(id).first<OrderRow>();
+  if (!order) return c.text('ok');
+
+  const st = await provider.retrieveSession(id);
+  if (st.paid) {
+    await fulfillOrder(c.env, order.id, { baseUrl: baseUrlOf(c.env, c.req.raw), providerPaymentId: st.paymentId, waiter: c.executionCtx });
+  } else if (st.expired && order.status === 'pending') {
+    await cancelOrder(c.env, order, 'expired');
+  }
+  return c.text('ok');
 });

@@ -8,33 +8,11 @@ import { refundOrder } from '../src/services/orders';
 import { PaymentError } from '../src/services/payments';
 import { StripeProvider } from '../src/services/payments/stripe';
 import type { OrderRow } from '../src/services/types';
-import { e, formBody, http, locationOf, resetData, seedEvent } from './helpers';
+import { e, fakeFetch, formBody, http, json, locationOf, resetData, seedEvent, type Call } from './helpers';
 
 const env = e as unknown as Record<string, unknown>;
 const count = async (sql: string, ...b: unknown[]) => (await e.DB.prepare(sql).bind(...b).first<{ n: number }>())!.n;
 
-interface Call {
-  url: string;
-  method: string;
-  headers: Record<string, string>;
-  body: URLSearchParams | null;
-  raw: string;
-}
-
-/** Faux `fetch` : enregistre les appels et répond selon la route. */
-function fakeFetch(handler: (c: Call) => Response | Promise<Response>) {
-  const calls: Call[] = [];
-  const fn = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const h: Record<string, string> = {};
-    new Headers(init?.headers).forEach((v, k) => (h[k.toLowerCase()] = v));
-    const raw = typeof init?.body === 'string' ? init.body : '';
-    const call: Call = { url: String(input), method: init?.method ?? 'GET', headers: h, body: raw && !raw.startsWith('{') ? new URLSearchParams(raw) : null, raw };
-    calls.push(call);
-    return handler(call);
-  };
-  return { calls, fn: fn as unknown as typeof fetch };
-}
-const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json' } });
 
 const saved = { ...env };
 beforeEach(async () => {
@@ -359,7 +337,7 @@ describe('tâches planifiées (cron)', () => {
     await e.DB.prepare("INSERT INTO email_outbox (to_email, subject, html, text, created_at) VALUES ('a@b.co', 's', '<p>x</p>', 'x', '2000-01-01T00:00:00.000Z')").run();
     env.MAIL_DRIVER = 'log';
     const r = await runScheduled(e);
-    expect(r).toEqual({ expired: 1, mailed: 1 });
+    expect(r).toEqual({ expired: 1, mailed: 1, closed: 0 });
     expect((await e.DB.prepare('SELECT status FROM orders').first<{ status: string }>())!.status).toBe('expired');
     expect(await count("SELECT COUNT(*) AS n FROM rate_limits WHERE key = 'old'")).toBe(0);
   });

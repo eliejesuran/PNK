@@ -1,6 +1,6 @@
 # Journal de debug
 
-Résultat actuel : `npm run check` → typecheck strict propre, **131 tests** verts (runtime Workers réel + base D1 locale).
+Résultat actuel : `npm run check` → typecheck strict propre, **157 tests** verts (runtime Workers réel + base D1 locale).
 `npm audit --omit=dev` : 0 vulnérabilité (les alertes restantes sont dans l'outillage de dev).
 
 ## Passe 1 — tests d'intégration au premier lancement
@@ -55,7 +55,14 @@ codes uniques. Scénarios réellement atteints : commandes payées/remboursées/
 | Accueil : une requête de stock par concert (N+1) | une seule requête groupée |
 | `BASE_URL` vide signalé comme manquant alors que le repli est voulu | n'est signalé que s'il contient une valeur d'exemple |
 | Code dupliqué (Shell, `Body`/`str`, requête de la page Caisse) | factorisé |
-Chaque correction a un test de non-régression (131 tests au total).
+Chaque correction a un test de non-régression (157 tests au total).
+
+## Ajout du fournisseur Mollie (par défaut) — tests dédiés (26 tests)
+Vérifiés contre une API Mollie simulée qui contrôle le contenu exact des requêtes : montant en chaîne à 2 décimales, langue belge, adresses de retour/annulation/notification,
+Bearer + clé d'idempotence, repli sans notification quand Mollie la refuse (autre clé d'idempotence), remboursement du montant restant (déjà remboursé = rien à envoyer,
+409 toléré), fermeture des paiements périmés par la tâche planifiée (une seule fois, réessai si panne), notification forgée ou hors format (ne valide jamais rien,
+aucun appel d'API pour un contenu sans rapport), panne de l'API pendant la notification (500 → Mollie réessaie), paiement tardif sans place (remboursement automatique).
+Non vérifié en réel : la page de paiement Mollie, Apple Pay / Google Pay / Bancontact, l'acceptation d'une ASBL par Mollie.
 
 ## Non vérifié en réel (aucun accès aux comptes — à faire à la recette)
 - Vrai Stripe (paiement, webhook, remboursement, Apple/Google Pay, Bancontact) : testé contre une **API simulée** qui vérifie le contenu exact des requêtes.

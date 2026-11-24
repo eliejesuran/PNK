@@ -429,6 +429,32 @@ export async function expireStaleOrders(db: D1Database, nowStr: string): Promise
   return r.meta.changes;
 }
 
+/**
+ * Ferme chez le prestataire les paiements des réservations expirées (Mollie : expiration non réglable, un acheteur pourrait
+ * encore payer 1 h après). Réessayé au passage suivant si le prestataire ne répond pas. Renvoie le nombre de paiements fermés.
+ */
+export async function closeExpiredProviderSessions(env: Env, limit = 20): Promise<number> {
+  const { results } = await env.DB.prepare(
+    "SELECT id, provider, provider_session_id FROM orders WHERE status = 'expired' AND provider_closed = 0 AND provider_session_id IS NOT NULL AND provider IN ('mollie', 'stripe') LIMIT ?1",
+  )
+    .bind(limit)
+    .all<{ id: number; provider: string; provider_session_id: string }>();
+  let closed = 0;
+  for (const o of results) {
+    const provider = providerFor(env, o.provider);
+    if (!provider) continue; // prestataire non configuré : on réessaiera
+    try {
+      await provider.expireSession(o.provider_session_id);
+    } catch (e) {
+      console.error('closeExpiredProviderSessions failed', o.id, e instanceof Error ? e.message : e);
+      continue;
+    }
+    await env.DB.prepare('UPDATE orders SET provider_closed = 1 WHERE id = ?1').bind(o.id).run();
+    closed++;
+  }
+  return closed;
+}
+
 // ---------- Anti-abus ----------
 
 /** Compteur par fenêtre de temps. Renvoie true si la limite est dépassée. */

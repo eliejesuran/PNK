@@ -79,6 +79,7 @@ export interface OrderRow {
   provider: string;
   provider_session_id: string | null;
   provider_payment_id: string | null;
+  provider_closed: number;
   checkout_url: string | null;
   email: string;
   name: string;

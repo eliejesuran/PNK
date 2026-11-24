@@ -24,7 +24,9 @@ export interface Env {
   /** URL publique sans slash final, ex. https://billets.exemple.org */
   BASE_URL?: string;
 
-  PAYMENT_PROVIDER?: string; // "stripe" | "mock" (mock refusé hors développement)
+  PAYMENT_PROVIDER?: string; // "mollie" (défaut) | "stripe" | "mock" (mock refusé hors développement)
+  /** Clé API Mollie : test_… (essais) puis live_… (vrais paiements). */
+  MOLLIE_API_KEY?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
 

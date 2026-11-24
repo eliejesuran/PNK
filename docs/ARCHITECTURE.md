@@ -3,7 +3,8 @@
 ## Vue d'ensemble
 ```
 Navigateur ──HTTPS──▶ Cloudflare ──▶ Worker PNK (Hono, SSR) ──▶ D1 (SQLite)
-                         │                 │  ├─▶ Stripe API (Checkout, refund)      ◀── Webhook signé
+                         │                 │  ├─▶ Mollie API (paiement, remboursement) ◀── notification (id seul)
+                         │                 │  │   (ou Stripe : webhook signé)
    Access (JWT) devant   │                 │  └─▶ Email Service / Resend
    /admin /scan /api/*   └─ assets statiques (public/) servis avant le Worker
 Cron */10 min : libère les réservations expirées, réessaie les emails, purge le limiteur
@@ -25,9 +26,10 @@ POST /e/:slug/checkout
   valide (nom, email, CGV, quantités) → limiteur + Turnstile
   createOrder : INSERT orders(pending, expire +32 min) ; pour chaque ligne un INSERT…SELECT conditionnel (stock)
                 └ échec d'une ligne ⇒ tout est annulé, message « plus assez de places »
-  startCheckout : total = 0 ⇒ fulfillOrder direct ; sinon Stripe Checkout (session 31 min) → 303 vers Stripe
-Stripe ──webhook checkout.session.completed──▶ /webhooks/stripe ─▶ fulfillOrder ┐
-Retour acheteur GET /o/:token (pending) ──interroge Stripe──▶ fulfillOrder     ├─ idempotent
+  startCheckout : total = 0 ⇒ fulfillOrder direct ; sinon page de paiement du prestataire (Mollie ; Stripe : session 31 min) → 303
+Mollie ─notification id=tr_…─▶ /webhooks/mollie ─(relit le paiement)─▶ fulfillOrder ┐
+Stripe ──webhook checkout.session.completed──▶ /webhooks/stripe ─▶ fulfillOrder    │
+Retour acheteur GET /o/:token (pending) ──interroge le prestataire──▶ fulfillOrder ├─ idempotent
                                                                                 ┘
 fulfillOrder : (re-réserve si expiré, sinon remboursement auto) → UPDATE orders SET paid, n° facture
                + INSERT tickets (codes 80 bits) dans UN batch ; puis email (file) billets + facture
@@ -47,7 +49,7 @@ Le QR contient `PNK:` + 16 caractères Crockford. Pas de signature : le code (80
 Détails : `SECURITY.md`.
 
 ## Choix et alternatives
-- **Stripe REST sans SDK** : bundle minuscule, comportement explicite ; interface `PaymentProvider` pour changer de fournisseur.
+- **REST sans SDK** (Mollie, Stripe) : bundle minuscule, comportement explicite ; interface `PaymentProvider` pour changer de fournisseur (Mollie par défaut : société de l'UE, Bancontact natif).
 - **D1** plutôt que KV/DO : transactions (`batch`) et SQL pour les rapports. Le stock repose sur la sérialisation des écritures SQLite.
 - **Pas de PDF** : l'impression passe par le CSS `@media print` (A4, 2 billets/page au maximum) — zéro dépendance, rendu fidèle. PDF joint = amélioration possible.
 - **Quotas, pas de plan de salle** : suffisant pour une salle de concerts debout.

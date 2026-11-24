@@ -9,7 +9,7 @@ BASE_URL=http://localhost:8787
 DEV_USER_EMAIL=dev@pnk.local
 BOOTSTRAP_OWNERS=dev@pnk.local
 
-# Paiement factice (page "payer / échouer") — refusé hors développement.
+# Paiement factice (page "payer / échouer") — refusé hors développement. En production : mollie (défaut) ou stripe.
 PAYMENT_PROVIDER=mock
 
 # Emails : "log" n'envoie rien, écrit dans la table email_outbox + console.
@@ -20,7 +20,8 @@ MAIL_FROM=PNK <billets@pnk.local>
 HASH_SECRET=dev-only-change-me-dev-only-change-me
 
 # --- Production : à poser avec `wrangler secret put <NOM>` (jamais dans un fichier commité) ---
-# STRIPE_SECRET_KEY=sk_test_...
+# MOLLIE_API_KEY=test_...          (puis live_... pour de vrais paiements)
+# STRIPE_SECRET_KEY=sk_test_...     (seulement si PAYMENT_PROVIDER=stripe)
 # STRIPE_WEBHOOK_SECRET=whsec_...
 # RESEND_API_KEY=re_...
 # TURNSTILE_SITE_KEY=0x4AAA...      (clé publique, peut aller dans vars)

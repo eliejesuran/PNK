@@ -30,7 +30,7 @@ Tout reste modifiable ensuite dans *Réglages*.
 | `MAIL_FROM` | `PNK <billets@tondomaine.be>` |
 | `MAIL_DRIVER` | `cloudflare` (défaut) ou `resend` |
 | `ACCESS_TEAM_DOMAIN` / `ACCESS_AUD` | voir §4 |
-| `PAYMENT_PROVIDER` | `stripe` (ne jamais mettre `mock` en prod : il est refusé) |
+| `PAYMENT_PROVIDER` | `mollie` (défaut) ou `stripe` (ne jamais mettre `mock` en prod : il est refusé) |
 
 Domaine personnalisé : ajoute dans `wrangler.jsonc` : `"routes": [{ "pattern": "billets.tondomaine.be", "custom_domain": true }]`.
 
@@ -39,8 +39,8 @@ Domaine personnalisé : ajoute dans `wrangler.jsonc` : `"routes": [{ "pattern": 
 npx wrangler secret put HASH_SECRET -c wrangler.local.jsonc            # openssl rand -hex 32
 npx wrangler secret put BOOTSTRAP_OWNERS -c wrangler.local.jsonc       # emails (séparés par des virgules) des 1ers PROPRIÉTAIRES, ex. toi@exemple.be
                                                # (en secret et non dans wrangler.jsonc : le dépôt est public)
-npx wrangler secret put STRIPE_SECRET_KEY -c wrangler.local.jsonc      # sk_test_… puis sk_live_… au passage en production
-npx wrangler secret put STRIPE_WEBHOOK_SECRET -c wrangler.local.jsonc  # whsec_… (voir §5)
+npx wrangler secret put MOLLIE_API_KEY -c wrangler.local.jsonc         # test_… pour essayer, puis live_… pour de vrais paiements (voir §5)
+# (seulement si PAYMENT_PROVIDER=stripe : STRIPE_SECRET_KEY et STRIPE_WEBHOOK_SECRET)
 # facultatifs : TURNSTILE_SECRET (+ TURNSTILE_SITE_KEY en var), RESEND_API_KEY
 ```
 
@@ -54,8 +54,9 @@ te demande de choisir ce sous-domaine). La protection se fait alors **au niveau 
    les mettre dans `ACCESS_TEAM_DOMAIN` et `ACCESS_AUD` de `wrangler.local.jsonc`, puis `npm run deploy`.
 
 **Limites de ce mode (test privé uniquement)** : Access protège **tout** le site, public compris (il faut être connecté pour voir les concerts) ;
-et **les webhooks Stripe sont bloqués** (Stripe ne peut pas se connecter à Access). Les achats d'essai fonctionnent quand même, grâce à la
-vérification faite au retour de l'acheteur (page de commande), mais pas le renvoi automatique des paiements différés. Pour ouvrir au public :
+et **les notifications de paiement sont bloquées** (Mollie / Stripe ne peuvent pas se connecter à Access). Les achats d'essai fonctionnent quand même :
+si Mollie refuse l'adresse de notification, PNK recrée le paiement sans elle, et le paiement est confirmé par la vérification faite au retour de
+l'acheteur (page de commande). Ce qui manque : la confirmation automatique si l'acheteur ferme son navigateur avant le retour. Pour ouvrir au public :
 un nom de domaine, puis l'application Access limitée à `/admin*`, `/scan*`, `/api/*` (§4).
 
 ## 4. Cloudflare Access (la porte du back-office) — **obligatoire**
@@ -67,13 +68,22 @@ Sans ça, `/admin`, `/scan` et `/api/*` répondent **503** (le Worker refuse par
 5. Récupère l'**Application Audience (AUD) tag** → `ACCESS_AUD`, et ton domaine d'équipe (`xxxx.cloudflareaccess.com`) → `ACCESS_TEAM_DOMAIN`.
 6. Rôles *dans* PNK : page **Équipe** (propriétaire / gestionnaire / contrôle). Access dit **qui** tu es, PNK dit **ce que tu peux faire**.
 
-## 5. Stripe
-1. Développeurs → Webhooks → *Add endpoint* : `https://billets.tondomaine.be/webhooks/stripe`, évènements :
-   `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`.
-   Copie le *signing secret* → `STRIPE_WEBHOOK_SECRET`.
-2. Paramètres → Moyens de paiement : active cartes, Apple Pay, Google Pay (automatiques), + Bancontact / iDEAL / Payconiq selon ton pays.
-   Aucun changement de code nécessaire.
-3. Repasse en **mode live** seulement après la recette (§8) : nouvelle clé, nouveau webhook, nouveau secret.
+## 5. Paiement : Mollie (par défaut)
+Mollie est une société néerlandaise (UE). Le client paie sur une page Mollie : Bancontact, cartes, Apple Pay, Google Pay, Wero, iDEAL selon ce que tu actives.
+1. **Compte** sur mollie.com (pays Belgique), au nom de l'ASBL. Vérification demandée : pièce d'identité des représentants légaux, n° d'entreprise, IBAN.
+   Avant de t'engager, **demande au support Mollie qu'une ASBL est bien acceptée** et quels documents fournir.
+2. **Clé de test** : Tableau de bord → *Développeurs* → *Clés API* → la clé `test_…` du profil du site. La poser en secret :
+   `npx wrangler secret put MOLLIE_API_KEY -c wrangler.local.jsonc` (colle la clé quand il la demande, jamais dans un chat).
+3. **Moyens de paiement** : *Paramètres* → *Moyens de paiement* : active Bancontact, cartes, Apple Pay, Google Pay (et Wero / iDEAL). Aucun changement de code.
+4. **Notifications** : rien à configurer. PNK envoie l'adresse `/webhooks/mollie` avec chaque paiement. Mollie ne signe pas ses notifications : PNK relit
+   donc toujours le paiement chez Mollie avec ta clé avant d'agir (une fausse requête ne valide rien).
+5. **Essais** : en mode test, Mollie affiche une page où tu choisis le résultat (payé, annulé, échoué, expiré). Cartes de test : Visa `4543 4740 0224 9996`,
+   Mastercard `2223 0000 1047 9399`, date future et code au hasard. Sans clé `test_`, le tableau de bord PNK affiche « Paiements Mollie en mode TEST ».
+6. **Vrais paiements** : une fois le compte activé par Mollie, remplace par la clé `live_…` (même commande), puis fais un vrai achat de 1 € et rembourse-le.
+Les paiements qui expirent côté PNK (réservation de 32 min) sont fermés automatiquement chez Mollie par la tâche planifiée.
+
+*Alternative Stripe* : `PAYMENT_PROVIDER=stripe`, secrets `STRIPE_SECRET_KEY` et `STRIPE_WEBHOOK_SECRET`, webhook `https://…/webhooks/stripe` avec les évènements
+`checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`.
 
 ## 6. Emails
 - **Cloudflare Email Service** : `npx wrangler email sending enable tondomaine.be`, puis `MAIL_FROM` avec une adresse de ce domaine.
@@ -89,18 +99,18 @@ Sans ça, `/admin`, `/scan` et `/api/*` répondent **503** (le Worker refuse par
 ```bash
 npm run deploy      # = npm run check puis wrangler deploy -c wrangler.local.jsonc
 ```
-Recette à faire **en mode test Stripe**, avec toi (je ne peux pas la faire seul) :
+Recette à faire **en mode test Mollie**, avec toi (je ne peux pas la faire seul) :
 - [ ] `https://…/` s'affiche ; `/admin` te demande ta connexion Access puis t'ouvre ; un inconnu est refusé.
 - [ ] Réglages renseignés (raison sociale, adresse, n° TVA, TVA, lien CGV) → le bandeau jaune disparaît.
 - [ ] Salle + concert créés, publié, visible en FR/EN/NL.
-- [ ] Achat avec la carte test `4242 4242 4242 4242` : page de confirmation, **email reçu** (Gmail + Outlook), QR lisible.
-- [ ] Apple Pay / Google Pay proposés sur téléphone ; Bancontact/iDEAL (mode test) si activés.
+- [ ] Achat de test (page de test Mollie : « payé ») : page de confirmation, **email reçu** (Gmail + Outlook), QR lisible.
+- [ ] Apple Pay / Google Pay proposés sur téléphone ; Bancontact (mode test) si activé.
 - [ ] Facture : mentions correctes ; **faire valider par le comptable**.
 - [ ] Billet imprimé sur ton imprimante : QR scannable.
 - [ ] Scanner sur un vrai téléphone (iPhone **et** Android) : OK, « déjà entré », mauvais concert.
-- [ ] Remboursement depuis la page d'une commande : Stripe rembourse, billet « ANNULÉ ».
-- [ ] Webhook : dans Stripe, évènements livrés avec statut 200.
-- [ ] Puis seulement : clés **live**, nouveau webhook, un vrai achat de 1 €.
+- [ ] Remboursement depuis la page d'une commande : Mollie rembourse, billet « ANNULÉ ».
+- [ ] Notification : dans le tableau de bord Mollie, l'appel `/webhooks/mollie` est livré (statut 200) — impossible tant que le site est derrière Access « All traffic ».
+- [ ] Puis seulement : clé **live**, un vrai achat de 1 €, remboursé.
 
 ## 9. Exploitation
 - **Sauvegardes** : D1 garde l'historique (Time Travel : `npx wrangler d1 time-travel info pnk`). Export manuel :

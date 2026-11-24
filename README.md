@@ -11,7 +11,7 @@ Tourne sur Cloudflare (Workers + D1), logiciel libre sous **GNU AGPL-3.0**.
 
 **Public (FR / EN / NL)**
 - Page par concert : infos, prix, places restantes, achat en 2 clics ; liste des prochains concerts.
-- Paiement par **Stripe Checkout** : cartes, **Apple Pay**, **Google Pay**, et selon ta config Bancontact / iDEAL / etc. (appli bancaire).
+- Paiement par **Mollie** (société néerlandaise, UE) : **Bancontact**, cartes, **Apple Pay**, **Google Pay**, Wero / iDEAL selon ta config. Stripe reste disponible en option.
 - Billet avec **QR code** (page web + email), **imprimable** (A4, 2 billets par page au maximum) ; **facture** (HT/TVA/TTC) imprimable.
 - Facture au nom d'une société sur demande (n° TVA, adresse).
 
@@ -41,12 +41,12 @@ En local, `/admin` s'ouvre directement (identité `dev@pnk.local`, propriétaire
 Ces deux facilités sont **désactivées automatiquement** hors `ENVIRONMENT=development` et hors `localhost`.
 
 ```bash
-npm run check    # typecheck + 131 tests (vrai runtime Workers, vraie base D1 locale)
+npm run check    # typecheck + 157 tests (vrai runtime Workers, vraie base D1 locale)
 ```
 
 ## Déployer
 
-Voir **[docs/DEPLOY.md](docs/DEPLOY.md)** : base D1, secrets, Stripe (webhook), Cloudflare Access, emails, domaine, recette.
+Voir **[docs/DEPLOY.md](docs/DEPLOY.md)** : base D1, secrets, paiement Mollie, Cloudflare Access, emails, domaine, recette.
 Les questions encore ouvertes pour finir (TVA, identité légale, sens de « NIP », domaine…) : **[docs/QUESTIONS.md](docs/QUESTIONS.md)**.
 
 ## Documentation

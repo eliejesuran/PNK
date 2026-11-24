@@ -11,7 +11,7 @@ ressemble à du « design IA » (pas de dégradés doux, coins ronds, violet, In
 
 ## Stack
 Cloudflare Workers + D1 (SQLite) · Hono (+ JSX serveur `hono/jsx`, pas de React) · TypeScript strict · jose (JWT Cloudflare Access)
-· qrcode-generator · Stripe Checkout via REST (pas de SDK) · Cloudflare Email Service (binding `EMAIL`) ou Resend · vitest +
+· qrcode-generator · paiement **Mollie** (défaut, UE) ou Stripe Checkout, via REST (pas de SDK) · Cloudflare Email Service (binding `EMAIL`) ou Resend · vitest +
 `@cloudflare/vitest-plugin` (tests dans le vrai runtime workerd, vraie D1 locale).
 
 ## Commandes
@@ -35,10 +35,10 @@ npx wrangler d1 migrations apply DB --remote   # prod : voir docs/DEPLOY.md
 | `src/lib/security.ts` | CSP, en-têtes, anti-CSRF (Origin/Sec-Fetch-Site), hash d'IP, Turnstile |
 | `src/lib/{ids,money,time,qr,text,flash}.ts` | codes billets (Crockford 80 bits), centimes/TVA, fuseaux, QR SVG+PNG, CSV sûr, flash |
 | `src/services/orders.ts` | **Cœur** : `createOrder` (réservation atomique), `startCheckout`, `fulfillOrder`, `refundOrder`, `rateLimited` |
-| `src/services/payments/` | `stripe.ts` (REST + signature webhook), `mock.ts` (dev), `index.ts` (`getProvider`, échoue fermé) |
+| `src/services/payments/` | `mollie.ts` (défaut), `stripe.ts` (REST + signature webhook), `mock.ts` (dev), `index.ts` (`getProvider`, échoue fermé) |
 | `src/services/{events,settings,stats,mail,emails,audit}.ts` | lecture/écriture métier, file d'emails, gabarits d'emails |
 | `src/routes/public.tsx` | accueil, `/e/:slug`, achat, `/o/:token` (+facture, annulation), `/q/:code.png`, faux paiement dev |
-| `src/routes/webhooks.ts` | `/webhooks/stripe` (signature + idempotence) |
+| `src/routes/webhooks.ts` | `/webhooks/stripe` (signature + idempotence), `/webhooks/mollie` (id seul, non signé : on relit le paiement chez Mollie) |
 | `src/routes/admin.tsx`, `admin-ops.tsx` | back-office : dashboard, concerts, types, salles / commandes, caisse, exports, réglages, équipe, journal, `/scan`, `/api/scan` |
 | `src/views/*.tsx` | JSX : `layout`, `public`, `admin`, `admin2`, `errors` |
 | `src/i18n/` | `fr.ts` (référence, définit `Dict`), `en.ts`, `nl.ts`, `index.ts` (`t()`, `pickLang`) |
@@ -49,7 +49,8 @@ npx wrangler d1 migrations apply DB --remote   # prod : voir docs/DEPLOY.md
 ## Invariants et règles (à ne pas casser)
 1. **Argent en centimes (entiers)**, prix TTC, TVA extraite du TTC (`splitVat`). Dates en UTC ISO, affichées dans `settings.timezone`.
 2. **Pas de survente** : toute réservation = `INSERT … SELECT` conditionnel (`takenSql`), jamais « lire puis écrire ». Les
-   réservations `pending` expirent (`HOLD_MINUTES`=32 > session Stripe 31 min ; Stripe exige ≥ 30 min).
+   réservations `pending` expirent (`HOLD_MINUTES`=32 > session Stripe 31 min ; Stripe exige ≥ 30 min). Mollie : expiration NON réglable →
+   la tâche planifiée ferme les paiements des réservations expirées (`closeExpiredProviderSessions`, colonne `provider_closed`).
 3. **`fulfillOrder` est idempotent** (webhook + page de retour + cron peuvent l'appeler en parallèle). Facture : numéro calculé
    dans l'UPDATE (`MAX(invoice_seq)+1`) + `UNIQUE(invoice_year, invoice_seq)` → sans trou ni doublon. Paiement reçu après expiration :
    re-réservation, sinon remboursement automatique.
@@ -75,6 +76,7 @@ npx wrangler d1 migrations apply DB --remote   # prod : voir docs/DEPLOY.md
 - D1 : paramètres `?1`, `?2` numérotés ; `batch()` est transactionnel mais un `INSERT…SELECT` à 0 ligne ne lève pas d'erreur → vérifier `meta.changes`.
 - Les assets de `public/` sont servis **avant** le Worker (pas d'en-têtes de sécurité du Worker dessus) ; cache 5 min via `public/_headers`.
 - **Impression des billets : 2 par page au maximum** (`@media print` dans `pnk.css` : bloc normal + `break-after: page` après chaque 2ᵉ billet). Vérifier après toute modification avec Chrome sans interface : créer des commandes de 1 à 5 billets, `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --no-pdf-header-footer --print-to-pdf=x.pdf <url /o/TOKEN>`, compter les `/Type /Page` du PDF → attendu 1, 1, 2, 2, 3 pages.
+- **Mollie** : `Authorization: Bearer <clé>` ; montant = chaîne à 2 décimales (`"30.00"`) ; la notification ne contient que `id=tr_…` (formulaire, non signée) ; `expiresAt` est en lecture seule ; une même `Idempotency-Key` avec d'autres paramètres = erreur 400 (d'où `…-sans-webhook` au second essai) ; un remboursement exige le montant ; la CSP `form-action` doit autoriser `https://*.mollie.com` (redirection 303 depuis notre formulaire).
 - Les iframes sont interdites (`X-Frame-Options: DENY`, `frame-ancestors 'none'`). Si le site de la salle veut intégrer la billetterie : à décider (voir QUESTIONS).
 
 ## Visite de démonstration (GitHub Pages)
@@ -87,19 +89,19 @@ Site statique cliquable : https://eliejesuran.github.io/PNK/ — branche `gh-pag
 **Fait et vérifié (tests + navigateur local)**
 - [x] Parcours public complet : accueil, page concert (3 langues), achat, page commande + billets QR imprimables, facture, emails.
 - [x] Stock sans survente (testé : 20 achats simultanés / 5 places ; chaos aléatoire ×4 graines), paiement tardif, auto-remboursement.
-- [x] Stripe Checkout (REST) + webhook signé idempotent + filet de sécurité au retour. **Testé contre une API simulée, jamais contre le vrai Stripe.**
+- [x] Paiement **Mollie** (défaut) : page hébergée, notification (id seul, relecture du paiement), retour acheteur, remboursement, fermeture des paiements périmés ; **Stripe** en option (webhook signé). **Testés contre des API simulées, jamais contre les vrais services.**
 - [x] Catégories de places : nom FR/EN/NL, prix, quota, vente en ligne oui/non, **petit texte**. **NIP = « Not Very Important Person » = invitations gratuites, jamais en vente en ligne** (créé à prix 0 et `online = 0` par le formulaire de concert ; généré via *Caisse / invités → Invitation gratuite*). Back-office : tableau de bord (KPI, courbe, canaux, remplissage), concerts (+ Standard/NIP/types libres, publier, dupliquer, annuler),
       salles, commandes (recherche, remboursement, renvoi d'email), caisse/invités (impression directe), rapports + exports CSV,
       réglages, équipe (3 rôles), journal d'audit.
 - [x] Scanner d'entrée (caméra BarcodeDetector/jsQR + saisie manuelle, anti double passage atomique, compteur).
 - [x] Sécurité : Cloudflare Access (JWT RS256) + rôles, CSP, CSRF, anti-abus (limiteur + Turnstile optionnel), audit.
 - [x] 3 langues publiques, style punk, responsive (vérifié en mobile 375 px).
-- [x] 131 tests verts ; `tsc` strict propre.
+- [x] 157 tests verts ; `tsc` strict propre.
 
 **État du déploiement de test (workers.dev)** : Worker, base D1 (EU), migrations, configuration de l'organisation et secrets (`HASH_SECRET`, `BOOTSTRAP_OWNERS`) sont en place sur le compte du propriétaire ; le site public répond, `/admin` et `/scan` répondent 503 tant qu'Access n'est pas configuré (échoue fermé, voulu). Reste : Access (voir `docs/DEPLOY.md` §3 bis), Stripe (test), domaine + emails.
 
 **Pas vérifié en réel (aucun accès aux comptes)** — à faire au déploiement, voir `docs/DEPLOY.md` §Recette :
-- [ ] Vrai paiement Stripe (mode test) + webhook, Apple Pay / Google Pay / Bancontact.
+- [ ] Vrai paiement Mollie (clé `test_…`) puis `live_…`, Apple Pay / Google Pay / Bancontact ; l'adresse de notification n'est atteignable qu'avec un domaine (Access « All traffic » la bloque).
 - [ ] Vrai JWT Cloudflare Access (seul le rejet des faux a été testé).
 - [ ] Envoi réel via Cloudflare Email Service (domaine à activer) ; rendu de l'email dans Gmail/Outlook/Apple Mail.
 - [ ] Scan caméra sur un vrai téléphone (iOS Safari = jsQR ; Android Chrome = BarcodeDetector) ; impression papier réelle.
@@ -111,7 +113,7 @@ Site statique cliquable : https://eliejesuran.github.io/PNK/ — branche `gh-pag
 - [ ] Mode scanner hors-ligne (liste de codes en cache) si le réseau de la salle est mauvais.
 - [ ] Pages légales (CGV, confidentialité) : le lien CGV est un réglage, le texte reste à fournir par la salle.
 
-**Bloqué en attente du propriétaire** : voir `docs/QUESTIONS.md` — mention de facture à TVA 0 %, compte Stripe (de l'ASBL), nom de domaine (non urgent pour tester, requis avant la vente), connexion `wrangler login`, textes légaux, email d'expédition. Déjà répondu : NIP, identité de l'organisateur (nom, siège, n° d'entreprise, email), TVA 0 % (modifiable), Belgique, premier propriétaire.
+**Bloqué en attente du propriétaire** : voir `docs/QUESTIONS.md` — mention de facture à TVA 0 %, compte Mollie (de l'ASBL ; confirmer qu'une ASBL est acceptée), nom de domaine (non urgent pour tester, requis avant la vente), connexion `wrangler login`, textes légaux, email d'expédition. Déjà répondu : NIP, identité de l'organisateur (nom, siège, n° d'entreprise, email), TVA 0 % (modifiable), Belgique, premier propriétaire.
 
 ## Déroulé de travail attendu
 1. `npm run check` avant chaque commit. Messages de commit en français, concis, à l'impératif ; terminer par la ligne de co-auteur demandée.

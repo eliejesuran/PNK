@@ -12,7 +12,7 @@ import { opsRoutes } from './routes/admin-ops';
 import { publicRoutes } from './routes/public';
 import { webhookRoutes } from './routes/webhooks';
 import { flushOutbox } from './services/mail';
-import { expireStaleOrders, purgeOldRateLimits } from './services/orders';
+import { closeExpiredProviderSessions, expireStaleOrders, purgeOldRateLimits } from './services/orders';
 import { ErrorView } from './views/errors';
 
 const app = new Hono<AppEnv>();
@@ -63,12 +63,13 @@ app.onError((err, c) => {
   }
 });
 
-export async function runScheduled(env: Env): Promise<{ expired: number; mailed: number }> {
+export async function runScheduled(env: Env): Promise<{ expired: number; mailed: number; closed: number }> {
   const now = new Date();
   const expired = await expireStaleOrders(env.DB, now.toISOString());
   const mailed = await flushOutbox(env, now.toISOString());
+  const closed = await closeExpiredProviderSessions(env);
   await purgeOldRateLimits(env.DB, now.getTime());
-  return { expired, mailed };
+  return { expired, mailed, closed };
 }
 
 export default {

@@ -14,7 +14,7 @@ export const CSP = [
   "connect-src 'self'",
   "media-src 'self' blob:",
   'frame-src https://challenges.cloudflare.com',
-  "form-action 'self' https://checkout.stripe.com",
+  "form-action 'self' https://checkout.stripe.com https://*.mollie.com",
   "base-uri 'none'",
   "object-src 'none'",
   "frame-ancestors 'none'",

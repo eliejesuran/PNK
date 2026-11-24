@@ -90,10 +90,14 @@ export function envGaps(env: Env): string[] {
   const dev = isDev(env);
   if (!dev) {
     if (!env.ACCESS_TEAM_DOMAIN || !env.ACCESS_AUD) gaps.push('Cloudflare Access (ACCESS_TEAM_DOMAIN et ACCESS_AUD)');
-    if ((env.PAYMENT_PROVIDER ?? 'stripe') === 'stripe') {
+    const provider = env.PAYMENT_PROVIDER ?? 'mollie';
+    if (provider === 'mollie') {
+      if (!env.MOLLIE_API_KEY) gaps.push('Clé API Mollie (MOLLIE_API_KEY)');
+      else if (env.MOLLIE_API_KEY.startsWith('test_')) gaps.push('Paiements Mollie en mode TEST (clé test_…) : aucun vrai argent ne circule ; mets la clé live_… pour vendre pour de vrai');
+    } else if (provider === 'stripe') {
       if (!env.STRIPE_SECRET_KEY) gaps.push('Clé secrète Stripe (STRIPE_SECRET_KEY)');
       if (!env.STRIPE_WEBHOOK_SECRET) gaps.push('Secret du webhook Stripe (STRIPE_WEBHOOK_SECRET)');
-    } else gaps.push('PAYMENT_PROVIDER doit valoir "stripe" en production');
+    } else gaps.push('PAYMENT_PROVIDER doit valoir "mollie" ou "stripe" en production');
     if (!env.HASH_SECRET) gaps.push('HASH_SECRET (anti-abus)');
     if (env.BASE_URL?.includes('example.org')) gaps.push('BASE_URL (valeur d’exemple : mets l’URL publique, ou laisse vide pour utiliser l’adresse de la requête)');
     if (!env.MAIL_FROM || env.MAIL_FROM.includes('example.org')) gaps.push('MAIL_FROM (adresse d’expédition des emails)');
